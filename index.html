@@ -327,27 +327,6 @@
   <div id="page-settings" class="page">
     <div class="page-title">Settings</div>
 
-    <!-- URLs -->
-    <div class="card section-gap">
-      <div class="card-title">🔗 Lottery Result URLs</div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">6/45 Result URL</label>
-          <input type="url" class="form-input" id="set-url645" placeholder="https://..." />
-          <p class="hint">Opens when you click "Check 6/45"</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">6/55 Result URL</label>
-          <input type="url" class="form-input" id="set-url655" placeholder="https://..." />
-          <p class="hint">Opens when you click "Check 6/55"</p>
-        </div>
-      </div>
-      <div class="url-row">
-        <a id="open-url645" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">↗ Check 6/45</a>
-        <a id="open-url655" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">↗ Check 6/55</a>
-      </div>
-    </div>
-
     <!-- Start date -->
     <div class="card section-gap">
       <div class="card-title">📅 Tracking Start Date</div>
@@ -652,26 +631,10 @@ function deleteResult(id) {
    SETTINGS
 ══════════════════════════════════════════ */
 function renderSettings() {
-  document.getElementById('set-url645').value   = S.settings.url645    || '';
-  document.getElementById('set-url655').value   = S.settings.url655    || '';
   document.getElementById('set-startdate').value = S.settings.startDate || '';
-  updateURLLinks();
   buildGrid('645');
   buildGrid('655');
 }
-
-function updateURLLinks() {
-  const u645 = document.getElementById('set-url645').value;
-  const u655 = document.getElementById('set-url655').value;
-  const el645 = document.getElementById('open-url645');
-  const el655 = document.getElementById('open-url655');
-  el645.href = u645 || '#'; el645.style.opacity = u645 ? 1 : .45;
-  el655.href = u655 || '#'; el655.style.opacity = u655 ? 1 : .45;
-}
-
-['set-url645','set-url655'].forEach(id => {
-  document.getElementById(id)?.addEventListener('input', updateURLLinks);
-});
 
 function buildGrid(type) {
   const max = type === '645' ? 45 : 55;
@@ -708,10 +671,7 @@ function updateCnt(type) {
 }
 
 function saveSettings() {
-  S.settings.url645     = document.getElementById('set-url645').value.trim();
-  S.settings.url655     = document.getElementById('set-url655').value.trim();
-  S.settings.startDate  = document.getElementById('set-startdate').value;
-  updateURLLinks();
+  S.settings.startDate = document.getElementById('set-startdate').value;
   save();
   toast('Settings saved!');
 }
