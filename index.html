@@ -252,6 +252,99 @@
     .btn-sync:disabled { opacity: .6; cursor: not-allowed; filter: none; }
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(242,223,200,.3); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════════════
+       MOBILE RESPONSIVE
+    ══════════════════════════════════════════ */
+
+    /* ── Small tablet (≤ 760px) already handled by grid-2/grid-3 above ── */
+
+    /* ── Mobile (≤ 600px) ── */
+    @media (max-width: 600px) {
+
+      /* NAV — full-width tab bar, hide logo */
+      .nav { padding: 0; gap: 0; }
+      .nav-logo { display: none; }
+      .nav-tabs { width: 100%; }
+      .nav-tab {
+        flex: 1; padding: 13px 4px; font-size: 0.78rem;
+        border-radius: 0; text-align: center;
+        white-space: nowrap; overflow: hidden;
+      }
+
+      /* MAIN — tighter padding, room for nothing extra */
+      .main { padding: 16px 12px 24px; }
+      .page-title { font-size: 1.3rem; margin-bottom: 14px; }
+
+      /* CARDS */
+      .card { padding: 14px 12px; }
+
+      /* STAT CARDS — 2 columns instead of 3 */
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+
+      /* SYNC BAR — stack vertically */
+      .sync-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+      .btn-sync { min-width: unset; width: 100%; }
+
+      /* BALLS — smaller on mobile */
+      .ball { width: 28px; height: 28px; font-size: 0.68rem; margin: 1px; }
+
+      /* FILTER ROW */
+      .flt-btn { padding: 7px 13px; font-size: 0.86rem; }
+
+      /* Columns hidden on mobile via class */
+      .hide-mobile { display: none; }
+
+      /* ROW-BETWEEN — stack on very small */
+      .row-between { flex-direction: column; align-items: flex-start; }
+      .row-between > div:last-child, .row-between > button { align-self: stretch; }
+      .row-between .btn { width: 100%; justify-content: center; }
+
+      /* MODAL — bottom sheet */
+      .modal-bg { align-items: flex-end; padding: 0; }
+      .modal {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%; width: 100%;
+        max-height: 92vh; overflow-y: auto;
+        padding: 22px 18px 32px;
+      }
+
+      /* FINANCE FUND BAR — 1 column */
+      .fund-bar { grid-template-columns: 1fr; gap: 10px; }
+
+      /* FORM — full-width buttons in modals/panels */
+      .modal-footer { flex-direction: column; }
+      .modal-footer .btn { width: 100%; justify-content: center; }
+
+      /* DASHBOARD latest result balls row wraps nicely */
+      .balls-row { flex-wrap: wrap; }
+
+      /* TOAST — full width at bottom */
+      .toast {
+        left: 12px; right: 12px; bottom: 16px;
+        text-align: center;
+      }
+
+      /* TABLE — make scrollable with hint */
+      .tbl-wrap { -webkit-overflow-scrolling: touch; }
+
+      /* NUMBER GRID — even more compact on very small screens */
+      .num-grid-45 { grid-template-columns: repeat(9, 28px); gap: 3px; }
+      .num-grid-55 { grid-template-columns: repeat(9, 28px); gap: 3px; }
+
+      /* INLINE STATS in breakdown */
+      .inline-stat { grid-template-columns: 1fr 1fr; gap: 10px; }
+    }
+
+    /* ── Very small (≤ 380px) ── */
+    @media (max-width: 380px) {
+      .nav-tab { font-size: 0.7rem; padding: 12px 2px; }
+      .num-grid-45 { grid-template-columns: repeat(9, 24px); gap: 3px; }
+      .num-grid-55 { grid-template-columns: repeat(9, 24px); gap: 3px; }
+      .ball { width: 24px; height: 24px; font-size: 0.6rem; }
+      .stat-value { font-size: 1.6rem; }
+      .fund-stat .fs-val { font-size: 1.6rem; }
+    }
   </style>
 </head>
 <body>
@@ -347,7 +440,7 @@
               <th>Date</th>
               <th>Type</th>
               <th>Winning Numbers</th>
-              <th>My Numbers</th>
+              <th class="hide-mobile">My Numbers</th>
               <th>Match</th>
               <th>Prize Won</th>
               <th></th>
@@ -427,7 +520,7 @@
               <th>Date</th>
               <th>Person</th>
               <th>Amount</th>
-              <th>Note</th>
+              <th class="hide-mobile">Note</th>
               <th></th>
             </tr>
           </thead>
@@ -789,7 +882,7 @@ function renderHistory() {
       <td style="white-space:nowrap">${r.date}</td>
       <td><span class="type-badge tb-${r.type}">${r.type === '645' ? '6/45' : '6/55'}</span></td>
       <td>${winBalls}</td>
-      <td>${myBalls}</td>
+      <td class="hide-mobile">${myBalls}</td>
       <td><span class="prize-badge ${tier.cls}">${matched} matched</span></td>
       <td>${prizeCell}</td>
       <td><button class="btn btn-danger" onclick="deleteResult('${r.id}')">✕</button></td>
@@ -972,7 +1065,7 @@ function renderFundHistory() {
     <td style="white-space:nowrap">${f.date}</td>
     <td><span class="tag-pill">${f.person || '—'}</span></td>
     <td style="color:#a29bfe;font-weight:700">${fmt(f.amount)}</td>
-    <td style="color:var(--muted)">${f.note || '—'}</td>
+    <td class="hide-mobile" style="color:var(--muted)">${f.note || '—'}</td>
     <td><button class="btn btn-danger" onclick="deleteFund('${f.id}')">✕</button></td>
   </tr>`).join('');
 }
