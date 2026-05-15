@@ -97,8 +97,8 @@
 
     /* ── NUMBER GRID ── */
     .num-grid { display: grid; }
-    .num-grid-45 { grid-template-columns: repeat(9, 32px);  gap: 4px; }
-    .num-grid-55 { grid-template-columns: repeat(11, 28px); gap: 4px; }
+    .num-grid-45 { grid-template-columns: repeat(9, 46px);  gap: 5px; }
+    .num-grid-55 { grid-template-columns: repeat(11, 40px); gap: 5px; }
     @media (max-width: 520px) {
       .num-grid-45 { grid-template-columns: repeat(9, 28px); }
       .num-grid-55 { grid-template-columns: repeat(9, 26px); }
@@ -106,7 +106,7 @@
     .num-btn {
       width: 100%; aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 50%;
       background: transparent; color: var(--muted); cursor: pointer;
-      font-size: 0.62rem; font-weight: 700; transition: all .13s;
+      font-size: 1.24rem; font-weight: 700; transition: all .13s;
       display: flex; align-items: center; justify-content: center;
     }
     .num-btn:hover { border-color: var(--gold); color: var(--text); }
@@ -328,9 +328,9 @@
       /* TABLE — make scrollable with hint */
       .tbl-wrap { -webkit-overflow-scrolling: touch; }
 
-      /* NUMBER GRID — even more compact on very small screens */
-      .num-grid-45 { grid-template-columns: repeat(9, 28px); gap: 3px; }
-      .num-grid-55 { grid-template-columns: repeat(9, 28px); gap: 3px; }
+      /* NUMBER GRID — scale down on mobile but keep text readable */
+      .num-grid-45 { grid-template-columns: repeat(9, 34px); gap: 3px; }
+      .num-grid-55 { grid-template-columns: repeat(9, 34px); gap: 3px; }
 
       /* INLINE STATS in breakdown */
       .inline-stat { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -339,8 +339,8 @@
     /* ── Very small (≤ 380px) ── */
     @media (max-width: 380px) {
       .nav-tab { font-size: 0.7rem; padding: 12px 2px; }
-      .num-grid-45 { grid-template-columns: repeat(9, 24px); gap: 3px; }
-      .num-grid-55 { grid-template-columns: repeat(9, 24px); gap: 3px; }
+      .num-grid-45 { grid-template-columns: repeat(9, 30px); gap: 3px; }
+      .num-grid-55 { grid-template-columns: repeat(9, 30px); gap: 3px; }
       .ball { width: 24px; height: 24px; font-size: 0.6rem; }
       .stat-value { font-size: 1.6rem; }
       .fund-stat .fs-val { font-size: 1.6rem; }
