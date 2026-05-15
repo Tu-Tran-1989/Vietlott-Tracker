@@ -200,6 +200,46 @@
     .url-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
     .section-gap { margin-bottom: 28px; }
 
+    /* ── FINANCE ── */
+    .fund-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 600px) { .fund-bar { grid-template-columns: 1fr; } }
+    .fund-stat {
+      border-radius: 14px; padding: 20px 18px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .fund-stat.total  { background: linear-gradient(135deg,rgba(124,111,234,.18),rgba(162,155,254,.08)); border-color: rgba(124,111,234,.35); }
+    .fund-stat.spent  { background: linear-gradient(135deg,rgba(232,82,106,.15),rgba(244,162,97,.08));  border-color: rgba(232,82,106,.3); }
+    .fund-stat.remain { background: linear-gradient(135deg,rgba(45,206,137,.15),rgba(0,206,201,.08));   border-color: rgba(45,206,137,.3); }
+    .fund-stat .fs-label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .fund-stat .fs-val   { font-size: 1.85rem; font-weight: 800; margin: 8px 0 3px; }
+    .fund-stat .fs-sub   { font-size: .76rem; color: var(--muted); }
+    .fund-stat.total  .fs-val { color: #a29bfe; }
+    .fund-stat.spent  .fs-val { color: #f4a261; }
+    .fund-stat.remain .fs-val { color: var(--success); }
+
+    .add-panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 20px;
+    }
+    .add-panel-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; cursor: pointer; user-select: none;
+    }
+    .add-panel-header:hover { background: rgba(124,111,234,.07); }
+    .add-panel-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 8px; }
+    .chevron { transition: transform .2s; font-size: .75rem; color: var(--muted); }
+    .chevron.open { transform: rotate(180deg); }
+    .add-panel-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
+    .add-panel-body.open { display: block; padding-top: 18px; }
+
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(124,111,234,.18); color: #a29bfe;
+      padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 600;
+    }
+    .tag-pill.green { background: rgba(45,206,137,.15); color: var(--success); }
+    .tag-pill.orange { background: rgba(244,162,97,.18); color: #f4a261; }
+
     /* ── SYNC BAR ── */
     .sync-bar {
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -223,6 +263,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" data-page="dashboard">📊 Dashboard</button>
     <button class="nav-tab" data-page="history">📋 History</button>
+    <button class="nav-tab" data-page="finance">💰 Finance</button>
     <button class="nav-tab" data-page="settings">⚙️ Settings</button>
   </div>
 </nav>
@@ -323,6 +364,138 @@
     </div>
   </div>
 
+  <!-- ═══ FINANCE ═══ -->
+  <div id="page-finance" class="page">
+    <div class="page-title">Finance</div>
+
+    <!-- Summary -->
+    <div class="fund-bar">
+      <div class="fund-stat total">
+        <div class="fs-label">Total Fund</div>
+        <div class="fs-val" id="fin-total">0 ₫</div>
+        <div class="fs-sub" id="fin-total-sub">from 0 contributors</div>
+      </div>
+      <div class="fund-stat spent">
+        <div class="fs-label">Total Spent</div>
+        <div class="fs-val" id="fin-spent">0 ₫</div>
+        <div class="fs-sub" id="fin-spent-sub">draws + extras</div>
+      </div>
+      <div class="fund-stat remain">
+        <div class="fs-label">Remaining</div>
+        <div class="fs-val" id="fin-remain">0 ₫</div>
+        <div class="fs-sub" id="fin-remain-sub">fund − spent</div>
+      </div>
+    </div>
+
+    <!-- Add Fund panel -->
+    <div class="add-panel" id="panel-fund">
+      <div class="add-panel-header" onclick="togglePanel('panel-fund')">
+        <div class="add-panel-title">➕ Add Fund</div>
+        <span class="chevron" id="chev-fund">▼</span>
+      </div>
+      <div class="add-panel-body" id="body-fund">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Amount (₫)</label>
+            <input type="number" class="form-input" id="f-amount" placeholder="e.g. 200000" min="0" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Person</label>
+            <input type="text" class="form-input" id="f-person" placeholder="e.g. Nguyen Van A" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="f-date" style="max-width:240px" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Note <span style="color:var(--muted)">(optional)</span></label>
+          <input type="text" class="form-input" id="f-note" placeholder="e.g. Monthly contribution" />
+        </div>
+        <button class="btn btn-primary" onclick="addFund()">Add Fund</button>
+      </div>
+    </div>
+
+    <!-- Fund History -->
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">📥 Fund History</div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Person</th>
+              <th>Amount</th>
+              <th>Note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="fund-tbody"></tbody>
+        </table>
+      </div>
+      <div id="fund-empty" class="empty-state" style="display:none">
+        <div class="e-icon">💸</div>
+        <p>No funds added yet.</p>
+      </div>
+    </div>
+
+    <!-- Add Extra Spend panel -->
+    <div class="add-panel" id="panel-extra">
+      <div class="add-panel-header" onclick="togglePanel('panel-extra')">
+        <div class="add-panel-title">🎟️ Add Unscheduled Spend</div>
+        <span class="chevron" id="chev-extra">▼</span>
+      </div>
+      <div class="add-panel-body" id="body-extra">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="e-date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expense (₫)</label>
+            <input type="number" class="form-input" id="e-expense" placeholder="e.g. 50000" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Set of Numbers <span style="color:var(--muted)">(6 numbers, space or comma separated)</span></label>
+          <input type="text" class="form-input" id="e-numbers" placeholder="e.g. 05 18 27 33 41 50" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason</label>
+          <input type="text" class="form-input" id="e-reason" placeholder="e.g. Special draw, birthday ticket…" />
+        </div>
+        <button class="btn btn-primary" onclick="addExtraSpend()">Add Spend</button>
+      </div>
+    </div>
+
+    <!-- Extra Spend History -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
+        <div class="card-title" style="margin:0">📤 Unscheduled Spend History</div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Numbers</th>
+              <th>Expense</th>
+              <th>Reason</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="extra-tbody"></tbody>
+        </table>
+      </div>
+      <div id="extra-empty" class="empty-state" style="display:none">
+        <div class="e-icon">🎯</div>
+        <p>No unscheduled spends yet.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ SETTINGS ═══ -->
   <div id="page-settings" class="page">
     <div class="page-title">Settings</div>
@@ -403,11 +576,16 @@ const STORE_KEY = 'lototrack_v1';
 
 let S = {
   settings: { url645: '', url655: '', startDate: '', nums645: [], nums655: [] },
-  results: []   // { id, date, type:'645'|'655', numbers:int[], bonus:int|null, prize:int }
+  results:  [],   // { id, date, type:'645'|'655', numbers:int[], bonus:int|null, prize:int }
+  funds:    [],   // { id, date, amount:int, person:str, note:str }
+  extras:   []    // { id, date, numbers:int[], expense:int, reason:str }
 };
 
 function load() {
   try { const d = localStorage.getItem(STORE_KEY); if (d) S = JSON.parse(d); } catch {}
+  // Ensure new arrays exist for users with older saved data
+  S.funds  = S.funds  || [];
+  S.extras = S.extras || [];
 }
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
 
@@ -416,8 +594,9 @@ function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
 ══════════════════════════════════════════ */
 const RENDERERS = {
   dashboard: renderDashboard,
-  history: renderHistory,
-  settings: renderSettings
+  history:   renderHistory,
+  finance:   renderFinance,
+  settings:  renderSettings
 };
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -726,6 +905,148 @@ function submitResult() {
   closeAddModal();
   renderHistory();
   toast('Result added!');
+}
+
+/* ══════════════════════════════════════════
+   FINANCE
+══════════════════════════════════════════ */
+function renderFinance() {
+  renderFundSummary();
+  renderFundHistory();
+  renderExtraHistory();
+  // Default dates
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('f-date').value = today;
+  document.getElementById('e-date').value = today;
+}
+
+function renderFundSummary() {
+  const totalFund  = (S.funds  || []).reduce((s, f) => s + (f.amount  || 0), 0);
+  const extraSpent = (S.extras || []).reduce((s, e) => s + (e.expense || 0), 0);
+  const draws645   = countDrawDays('645');
+  const draws655   = countDrawDays('655');
+  const drawSpent  = (draws645 + draws655) * 10000;
+  const totalSpent = drawSpent + extraSpent;
+  const remaining  = totalFund - totalSpent;
+
+  const people = [...new Set((S.funds || []).map(f => f.person).filter(Boolean))];
+
+  document.getElementById('fin-total').textContent   = fmt(totalFund);
+  document.getElementById('fin-total-sub').textContent =
+    `from ${(S.funds||[]).length} contribution${(S.funds||[]).length !== 1 ? 's' : ''} · ${people.length} person${people.length !== 1 ? 's' : ''}`;
+
+  document.getElementById('fin-spent').textContent   = fmt(totalSpent);
+  document.getElementById('fin-spent-sub').innerHTML =
+    `<span title="Regular draws">${fmt(drawSpent)} draws</span> + <span title="Extra tickets">${fmt(extraSpent)} extras</span>`;
+
+  const remEl = document.getElementById('fin-remain');
+  remEl.textContent  = (remaining >= 0 ? '' : '−') + fmt(Math.abs(remaining));
+  remEl.style.color  = remaining >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('fin-remain-sub').textContent = remaining >= 0 ? 'in the pool' : 'overspent';
+}
+
+function renderFundHistory() {
+  const funds = [...(S.funds || [])].sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('fund-tbody');
+  const empty = document.getElementById('fund-empty');
+
+  if (!funds.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = funds.map(f => `<tr>
+    <td style="white-space:nowrap">${f.date}</td>
+    <td><span class="tag-pill">${f.person || '—'}</span></td>
+    <td style="color:#a29bfe;font-weight:700">${fmt(f.amount)}</td>
+    <td style="color:var(--muted)">${f.note || '—'}</td>
+    <td><button class="btn btn-danger" onclick="deleteFund('${f.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+function renderExtraHistory() {
+  const extras = [...(S.extras || [])].sort((a,b) => b.date.localeCompare(a.date));
+  const tbody  = document.getElementById('extra-tbody');
+  const empty  = document.getElementById('extra-empty');
+
+  if (!extras.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = extras.map(e => {
+    const balls = (e.numbers || []).map(n => makeBall(n, 'ball-purple', 26)).join('');
+    return `<tr>
+      <td style="white-space:nowrap">${e.date}</td>
+      <td><div class="balls-row">${balls}</div></td>
+      <td><span class="tag-pill orange">${fmt(e.expense)}</span></td>
+      <td style="color:var(--muted)">${e.reason || '—'}</td>
+      <td><button class="btn btn-danger" onclick="deleteExtra('${e.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addFund() {
+  const amount = parseInt(document.getElementById('f-amount').value) || 0;
+  const person = document.getElementById('f-person').value.trim();
+  const date   = document.getElementById('f-date').value;
+  const note   = document.getElementById('f-note').value.trim();
+
+  if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
+  if (!person)                { toast('Enter a person name',  true); return; }
+  if (!date)                  { toast('Select a date',        true); return; }
+
+  S.funds.push({ id: Date.now().toString(), date, amount, person, note });
+  save();
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-person').value = '';
+  document.getElementById('f-note').value   = '';
+  renderFundSummary();
+  renderFundHistory();
+  toast('Fund added!');
+}
+
+function deleteFund(id) {
+  if (!confirm('Delete this fund entry?')) return;
+  S.funds = S.funds.filter(f => f.id !== id);
+  save(); renderFundSummary(); renderFundHistory();
+  toast('Fund entry deleted');
+}
+
+function addExtraSpend() {
+  const date    = document.getElementById('e-date').value;
+  const expense = parseInt(document.getElementById('e-expense').value) || 0;
+  const rawNums = document.getElementById('e-numbers').value;
+  const reason  = document.getElementById('e-reason').value.trim();
+
+  if (!date)                  { toast('Select a date',            true); return; }
+  if (!expense || expense <=0){ toast('Enter a valid expense',    true); return; }
+  if (!reason)                { toast('Enter a reason',           true); return; }
+
+  const numbers = rawNums.split(/[\s,]+/).filter(Boolean).map(Number);
+  if (numbers.length !== 6)   { toast('Enter exactly 6 numbers', true); return; }
+  if (numbers.some(n => isNaN(n) || n < 1 || n > 55)) {
+    toast('Numbers must be 01–55', true); return;
+  }
+
+  S.extras.push({ id: Date.now().toString(), date, numbers, expense, reason });
+  save();
+  document.getElementById('e-numbers').value = '';
+  document.getElementById('e-expense').value = '';
+  document.getElementById('e-reason').value  = '';
+  renderFundSummary();
+  renderExtraHistory();
+  toast('Spend recorded!');
+}
+
+function deleteExtra(id) {
+  if (!confirm('Delete this spend entry?')) return;
+  S.extras = S.extras.filter(e => e.id !== id);
+  save(); renderFundSummary(); renderExtraHistory();
+  toast('Spend entry deleted');
+}
+
+function togglePanel(id) {
+  const body  = document.getElementById('body-'  + id.replace('panel-',''));
+  const chev  = document.getElementById('chev-'  + id.replace('panel-',''));
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
 }
 
 /* ══════════════════════════════════════════
