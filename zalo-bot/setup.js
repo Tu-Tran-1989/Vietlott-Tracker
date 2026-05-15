@@ -8,8 +8,9 @@
  */
 
 import { Zalo, ThreadType } from 'zca-js';
-import fs   from 'fs';
-import path from 'path';
+import fs     from 'fs';
+import path   from 'path';
+import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -67,8 +68,32 @@ async function setup() {
 }
 
 async function doQRLogin(zalo) {
-  console.log('📱  Scan the QR code below with your Zalo app:\n');
-  const api = await zalo.loginQR({ qrPath: path.join(__dirname, 'qr.png') });
+  const qrFile = path.join(__dirname, 'qr.png');
+
+  console.log('');
+  console.log('════════════════════════════════════════════');
+  console.log('  ZALO QR LOGIN');
+  console.log('════════════════════════════════════════════');
+  console.log('  1. Open Zalo on your phone');
+  console.log('  2. Tap the  [ ⊞ ]  scan icon (top-right)');
+  console.log('  3. Scan the QR code from the image below');
+  console.log('');
+  console.log(`  QR image: ${qrFile}`);
+  console.log('════════════════════════════════════════════');
+  console.log('  Waiting for scan…');
+  console.log('');
+
+  // Start login — QR saved to file
+  const loginPromise = zalo.loginQR({ qrPath: qrFile });
+
+  // Auto-open the PNG on Windows after a short delay (so file is written first)
+  setTimeout(() => {
+    exec(`start "" "${qrFile}"`, err => {
+      if (!err) console.log('  📂  QR image opened automatically — scan it with Zalo.');
+    });
+  }, 1500);
+
+  const api = await loginPromise;
 
   // Save credentials for future runs
   const creds = {
