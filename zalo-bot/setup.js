@@ -3,18 +3,21 @@
  *
  *   node setup.js          → login via QR + list your groups
  *   node setup.js --reauth → force re-login even if credentials exist
- *
- * After running, copy your group ID into config.json → "groupId"
  */
 
-import { Zalo, ThreadType } from 'zca-js';
-import fs     from 'fs';
-import path   from 'path';
+import { Zalo, ThreadType, LoginQRCallbackEventType } from 'zca-js';
+import fs      from 'fs';
+import path    from 'path';
 import { exec } from 'child_process';
+import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
+
+const require    = createRequire(import.meta.url);
+const qrTerminal = require('qrcode-terminal');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CRED_FILE = path.join(__dirname, 'credentials.json');
+const QR_FILE   = path.join(__dirname, 'qr.png');
 
 async function setup() {
   const forceReauth = process.argv.includes('--reauth');
@@ -42,78 +45,104 @@ async function setup() {
     const groups = await api.getGroupList();
     if (!groups || groups.length === 0) {
       console.log('No groups found. Make sure you are a member of at least one group.');
+      console.log('Try sending a message in your group and re-run with --reauth.');
       return;
     }
 
-    console.log('┌─────────────────────────────────────────────────────┐');
-    console.log('│  YOUR ZALO GROUPS                                   │');
-    console.log('├──────────────────────────┬──────────────────────────┤');
-    console.log('│  Group Name              │  Group ID                │');
-    console.log('├──────────────────────────┼──────────────────────────┤');
+    console.log('┌──────────────────────────────┬──────────────────────────┐');
+    console.log('│  Group Name                  │  Group ID                │');
+    console.log('├──────────────────────────────┼──────────────────────────┤');
     for (const g of groups) {
-      const name = (g.name || 'Unnamed').substring(0, 24).padEnd(24);
+      const name = (g.name || 'Unnamed').substring(0, 28).padEnd(28);
       const id   = String(g.groupId || g.id || '').padEnd(24);
       console.log(`│  ${name}  │  ${id}  │`);
     }
-    console.log('└──────────────────────────┴──────────────────────────┘');
-    console.log('\n👉  Copy the Group ID of your target group into config.json → "groupId"\n');
+    console.log('└──────────────────────────────┴──────────────────────────┘');
+    console.log('\n👉  Copy the Group ID into config.json → "groupId"\n');
   } catch (err) {
     console.error('❌  Could not fetch groups:', err.message);
-    console.log('    Try listening for a message from the group instead:\n');
-    console.log('    Send any message in your Zalo group, then check the console output below.\n');
-
-    // Fallback: listen for one message to extract groupId
+    console.log('\nFallback: send any message in your Zalo group,');
+    console.log('the Group ID will be printed here automatically.\n');
     await listenForGroupMessage(api);
   }
 }
 
-async function doQRLogin(zalo) {
-  const qrFile = path.join(__dirname, 'qr.png');
+// ── QR LOGIN ─────────────────────────────────────────────────────────────────
+function doQRLogin(zalo) {
+  return new Promise((resolve, reject) => {
+    console.log('');
+    console.log('══════════════════════════════════════════════════');
+    console.log('  SCAN THIS QR CODE WITH YOUR ZALO APP');
+    console.log('══════════════════════════════════════════════════');
+    console.log('  In Zalo app: tap the  ⊞  icon (top-right)');
+    console.log('══════════════════════════════════════════════════\n');
 
-  console.log('');
-  console.log('════════════════════════════════════════════');
-  console.log('  ZALO QR LOGIN');
-  console.log('════════════════════════════════════════════');
-  console.log('  1. Open Zalo on your phone');
-  console.log('  2. Tap the  [ ⊞ ]  scan icon (top-right)');
-  console.log('  3. Scan the QR code from the image below');
-  console.log('');
-  console.log(`  QR image: ${qrFile}`);
-  console.log('════════════════════════════════════════════');
-  console.log('  Waiting for scan…');
-  console.log('');
+    zalo.loginQR({ qrPath: QR_FILE }, async (event) => {
+      switch (event.type) {
 
-  // Start login — QR saved to file
-  const loginPromise = zalo.loginQR({ qrPath: qrFile });
+        case LoginQRCallbackEventType.QRCodeGenerated: {
+          // 1) ASCII QR in terminal — scan directly from screen
+          qrTerminal.generate(event.code, { small: true }, (qr) => {
+            console.log(qr);
+          });
 
-  // Auto-open the PNG on Windows after a short delay (so file is written first)
-  setTimeout(() => {
-    exec(`start "" "${qrFile}"`, err => {
-      if (!err) console.log('  📂  QR image opened automatically — scan it with Zalo.');
-    });
-  }, 1500);
+          // 2) Save PNG and auto-open it
+          try {
+            event.actions?.saveToFile?.();
+            console.log(`\n📄  QR image saved: ${QR_FILE}`);
+            exec(`start "" "${QR_FILE}"`); // open in default image viewer
+          } catch {}
 
-  const api = await loginPromise;
+          console.log('\n⏳  Waiting for you to scan… (expires in ~100 seconds)\n');
+          break;
+        }
 
-  // Save credentials for future runs
-  const creds = {
-    cookie:    api.cookie?.toJSON?.()?.cookies ?? [],
-    imei:      api.imei,
-    userAgent: api.userAgent,
-  };
-  fs.writeFileSync(CRED_FILE, JSON.stringify(creds, null, 2));
-  console.log('\n✅  QR login successful. Credentials saved to credentials.json\n');
-  return api;
+        case LoginQRCallbackEventType.QRCodeExpired: {
+          console.log('⚠️   QR expired. Generating a new one…\n');
+          event.actions?.retry?.();
+          break;
+        }
+
+        case LoginQRCallbackEventType.QRCodeScanned: {
+          console.log(`\n📱  Scanned by: ${event.userInfo?.name || 'user'}`);
+          console.log('    Please confirm on your phone…');
+          break;
+        }
+
+        case LoginQRCallbackEventType.QRCodeDeclined: {
+          console.log('\n❌  Login declined on phone. Retrying…\n');
+          event.actions?.retry?.();
+          break;
+        }
+
+        case LoginQRCallbackEventType.GotLoginInfo: {
+          const creds = {
+            cookie:    event.cookies ?? [],
+            imei:      event.imei,
+            userAgent: event.userAgent,
+          };
+          fs.writeFileSync(CRED_FILE, JSON.stringify(creds, null, 2));
+          console.log('\n✅  Login successful! Credentials saved.\n');
+
+          // Re-create API instance with saved credentials
+          const freshApi = await new Zalo().loginCredentials(creds).catch(reject);
+          if (freshApi) resolve(freshApi);
+          break;
+        }
+      }
+    }).catch(reject);
+  });
 }
 
+// ── FALLBACK: listen for a group message to get group ID ─────────────────────
 async function listenForGroupMessage(api) {
-  console.log('👂  Listening for incoming messages (send any message in your group)…');
+  console.log('👂  Listening for messages… send anything in your target Zalo group.');
   const { listener } = api;
   listener.on('message', (msg) => {
     if (msg.type === ThreadType.Group) {
-      console.log('\n✅  Found group!');
-      console.log(`    Name    : ${msg.data?.groupName || '(unknown)'}`);
-      console.log(`    Group ID: ${msg.threadId}`);
+      console.log('\n✅  Group detected!');
+      console.log(`    Name     : ${msg.data?.groupName || '(unknown)'}`);
+      console.log(`    Group ID : ${msg.threadId}`);
       console.log('\n👉  Copy this Group ID into config.json → "groupId"\n');
       process.exit(0);
     }
@@ -122,6 +151,7 @@ async function listenForGroupMessage(api) {
 }
 
 setup().catch(err => {
-  console.error('❌  Setup failed:', err.message);
+  console.error('\n❌  Setup failed:', err.message);
+  console.error('    Make sure you ran:  npm install');
   process.exit(1);
 });
