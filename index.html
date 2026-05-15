@@ -316,8 +316,10 @@
       .modal-footer { flex-direction: column; }
       .modal-footer .btn { width: 100%; justify-content: center; }
 
-      /* DASHBOARD latest result balls row wraps nicely */
-      .balls-row { flex-wrap: wrap; }
+      /* DASHBOARD latest result balls row — no wrap, all balls stay on one line */
+      .balls-row { flex-wrap: nowrap; }
+      .balls-row .ball { width: 34px !important; height: 34px !important; font-size: 12px !important; margin: 1px; }
+      .balls-sep { margin: 0 4px; }
 
       /* TOAST — full width at bottom */
       .toast {
@@ -342,6 +344,7 @@
       .num-grid-45 { grid-template-columns: repeat(9, 30px); gap: 3px; }
       .num-grid-55 { grid-template-columns: repeat(9, 30px); gap: 3px; }
       .ball { width: 24px; height: 24px; font-size: 0.6rem; }
+      .balls-row .ball { width: 28px !important; height: 28px !important; font-size: 10px !important; }
       .stat-value { font-size: 1.6rem; }
       .fund-stat .fs-val { font-size: 1.6rem; }
     }
