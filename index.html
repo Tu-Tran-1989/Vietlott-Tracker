@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lottery Tracker</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --card: #13132a;
+      --border: #252545;
+      --primary: #7c6fea;
+      --primary-h: #6258d4;
+      --accent-red: #e8526a;
+      --accent-orange: #f4a261;
+      --success: #2dce89;
+      --danger: #e8526a;
+      --muted: #7a7a9a;
+      --text: #e8e8f4;
+      --text-soft: #b0b0cc;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── NAV ── */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--card); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; gap: 32px;
+    }
+    .nav-logo { font-size: 1.3rem; font-weight: 800; color: var(--primary); padding: 14px 0; letter-spacing: -0.5px; white-space: nowrap; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab {
+      padding: 9px 18px; border: none; background: transparent; color: var(--muted);
+      cursor: pointer; font-size: 0.9rem; border-radius: 8px; transition: all .18s; font-weight: 500;
+    }
+    .nav-tab:hover { background: var(--border); color: var(--text); }
+    .nav-tab.active { background: var(--primary); color: #fff; }
+
+    /* ── LAYOUT ── */
+    .main { padding: 28px 24px; max-width: 1120px; margin: 0 auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-title { font-size: 1.55rem; font-weight: 700; margin-bottom: 24px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 760px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card); border-radius: 14px; padding: 22px;
+      border: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 16px;
+      color: var(--text-soft); display: flex; align-items: center; gap: 7px;
+    }
+
+    /* ── STAT CARD ── */
+    .stat-card {
+      background: var(--card); border-radius: 14px; padding: 22px 20px;
+      border: 1px solid var(--border); text-align: center;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .stat-value { font-size: 1.9rem; font-weight: 800; color: var(--primary); margin: 8px 0 4px; }
+    .stat-sub { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.85rem; }
+    .form-input {
+      width: 100%; padding: 10px 13px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text); font-size: 0.93rem;
+      transition: border-color .15s;
+    }
+    .form-input:focus { outline: none; border-color: var(--primary); }
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 5px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; border: none; border-radius: 9px;
+      cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all .18s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-h); }
+    .btn-ghost { background: var(--border); color: var(--text); }
+    .btn-ghost:hover { background: #2e2e55; }
+    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 5px 11px; font-size: 0.8rem; border-radius: 7px; }
+    .btn-danger:hover { background: rgba(232,82,106,.12); }
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+    .btn-link { background: transparent; color: var(--primary); border: 1px solid var(--border); }
+    .btn-link:hover { background: var(--border); }
+
+    /* ── NUMBER GRID ── */
+    .num-grid { display: grid; gap: 6px; }
+    .num-grid-45 { grid-template-columns: repeat(9, 1fr); }
+    .num-grid-55 { grid-template-columns: repeat(11, 1fr); }
+    @media (max-width: 520px) {
+      .num-grid-45 { grid-template-columns: repeat(7, 1fr); }
+      .num-grid-55 { grid-template-columns: repeat(7, 1fr); }
+    }
+    .num-btn {
+      aspect-ratio: 1; border: 2px solid var(--border); border-radius: 50%;
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-size: 0.75rem; font-weight: 700; transition: all .13s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .num-btn:hover { border-color: var(--primary); color: var(--text); }
+    .num-btn.selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .sel-counter { font-size: 0.83rem; color: var(--muted); margin-top: 10px; }
+    .sel-counter b { color: var(--primary); }
+
+    /* ── LOTTERY BALLS ── */
+    .ball {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%;
+      font-weight: 800; font-size: 0.82rem; margin: 2px; flex-shrink: 0;
+    }
+    .ball-purple { background: linear-gradient(135deg,#7c6fea,#a29bfe); color: #fff; }
+    .ball-red    { background: linear-gradient(135deg,#e8526a,#f4a261); color: #fff; }
+    .ball-bonus  { background: linear-gradient(135deg,#f4a261,#e8526a); color: #fff; }
+    .ball-user   { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .ball-match  { background: linear-gradient(135deg,#2dce89,#00cec9); color: #fff; box-shadow: 0 0 8px rgba(45,206,137,.4); }
+
+    /* ── PRIZE BADGE ── */
+    .prize-badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    }
+    .pb-jackpot { background: linear-gradient(90deg,#f4a261,#e8526a); color: #fff; }
+    .pb-jp2     { background: rgba(244,162,97,.2); color: #f4a261; }
+    .pb-p3      { background: rgba(162,155,254,.2); color: #a29bfe; }
+    .pb-p4      { background: rgba(45,206,137,.2); color: var(--success); }
+    .pb-p5      { background: rgba(45,206,137,.1); color: var(--success); }
+    .pb-none    { background: rgba(122,122,154,.15); color: var(--muted); }
+
+    /* ── TYPE BADGE ── */
+    .type-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+    .tb-645 { background: rgba(124,111,234,.2); color: #a29bfe; }
+    .tb-655 { background: rgba(232,82,106,.18); color: #f4a261; }
+
+    /* ── FILTER ── */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .flt-btn {
+      padding: 7px 16px; border: 1px solid var(--border); border-radius: 20px;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.84rem; transition: all .15s;
+    }
+    .flt-btn:hover { border-color: var(--primary); color: var(--text); }
+    .flt-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* ── TABLE ── */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 11px 14px; text-align: left; color: var(--muted); font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 11px 14px; border-bottom: 1px solid rgba(37,37,69,.6); font-size: 0.87rem; vertical-align: middle; }
+    tr:hover td { background: rgba(124,111,234,.05); }
+    .empty-state { text-align: center; padding: 52px 20px; color: var(--muted); }
+    .empty-state .e-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ── MODAL ── */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,.72); z-index: 200;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: 16px; padding: 28px;
+      width: 100%; max-width: 500px; border: 1px solid var(--border);
+      animation: fadeUp .2s ease;
+    }
+    @keyframes fadeUp { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: var(--card); border: 1px solid var(--success);
+      padding: 13px 18px; border-radius: 10px; font-size: 0.88rem;
+      animation: slideIn .25s ease; pointer-events: none;
+    }
+    .toast.err { border-color: var(--danger); }
+    @keyframes slideIn { from { transform: translateX(80px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ── MISC ── */
+    .row-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .divider-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 6px; }
+    .balls-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+    .balls-sep { color: var(--muted); margin: 0 8px; font-size: 1.1rem; }
+    .inline-stat { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+    .istat-label { font-size: 0.78rem; color: var(--muted); }
+    .istat-val { font-size: 1.15rem; font-weight: 700; }
+    a.btn { text-decoration: none; }
+    .url-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .section-gap { margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="nav-logo">🎰 LotoTrack</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="dashboard">📊 Dashboard</button>
+    <button class="nav-tab" data-page="history">📋 History</button>
+    <button class="nav-tab" data-page="settings">⚙️ Settings</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-title">Dashboard</div>
+
+    <!-- Latest results -->
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <div class="card-title">🟣 Latest 6/45 Result</div>
+        <div id="dash-latest-645"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 Latest 6/55 Result</div>
+        <div id="dash-latest-655"></div>
+      </div>
+    </div>
+
+    <!-- Total stats -->
+    <div class="grid-3 section-gap">
+      <div class="stat-card">
+        <div class="stat-label">Total Spent</div>
+        <div class="stat-value" id="stat-spent">—</div>
+        <div class="stat-sub">10,000₫ per draw</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Prize Won</div>
+        <div class="stat-value" id="stat-prize" style="color:var(--success)">—</div>
+        <div class="stat-sub">All winnings combined</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Net Balance</div>
+        <div class="stat-value" id="stat-net">—</div>
+        <div class="stat-sub">Prize minus Spent</div>
+      </div>
+    </div>
+
+    <!-- Per-type breakdown -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🟣 6/45 Breakdown</div>
+        <div id="dash-stats-645"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 6/55 Breakdown</div>
+        <div id="dash-stats-655"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY ═══ -->
+  <div id="page-history" class="page">
+    <div class="row-between">
+      <div class="page-title" style="margin:0">History</div>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add Result</button>
+    </div>
+
+    <div class="filter-row">
+      <button class="flt-btn active" data-filter="all">All</button>
+      <button class="flt-btn" data-filter="645">6/45</button>
+      <button class="flt-btn" data-filter="655">6/55</button>
+    </div>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Winning Numbers</th>
+              <th>My Numbers</th>
+              <th>Match</th>
+              <th>Prize Won</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="hist-tbody"></tbody>
+        </table>
+      </div>
+      <div id="hist-empty" class="empty-state" style="display:none">
+        <div class="e-icon">🎱</div>
+        <p>No results yet. Add your first lottery result!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS ═══ -->
+  <div id="page-settings" class="page">
+    <div class="page-title">Settings</div>
+
+    <!-- URLs -->
+    <div class="card section-gap">
+      <div class="card-title">🔗 Lottery Result URLs</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">6/45 Result URL</label>
+          <input type="url" class="form-input" id="set-url645" placeholder="https://..." />
+          <p class="hint">Opens when you click "Check 6/45"</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">6/55 Result URL</label>
+          <input type="url" class="form-input" id="set-url655" placeholder="https://..." />
+          <p class="hint">Opens when you click "Check 6/55"</p>
+        </div>
+      </div>
+      <div class="url-row">
+        <a id="open-url645" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">↗ Check 6/45</a>
+        <a id="open-url655" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">↗ Check 6/55</a>
+      </div>
+    </div>
+
+    <!-- Start date -->
+    <div class="card section-gap">
+      <div class="card-title">📅 Tracking Start Date</div>
+      <div style="max-width: 260px;">
+        <label class="form-label">Date you started buying tickets</label>
+        <input type="date" class="form-input" id="set-startdate" />
+        <p class="hint">Used to calculate total expenses from draw schedule</p>
+      </div>
+    </div>
+
+    <!-- My numbers 6/45 -->
+    <div class="card section-gap">
+      <div class="card-title">🟣 My 6/45 Numbers &nbsp;<span style="color:var(--muted);font-weight:400;font-size:.85rem">— select exactly 6 from 01–45</span></div>
+      <div class="num-grid num-grid-45" id="grid-645"></div>
+      <div class="sel-counter">Selected: <b id="cnt-645">0</b>/6</div>
+    </div>
+
+    <!-- My numbers 6/55 -->
+    <div class="card section-gap">
+      <div class="card-title">🔴 My 6/55 Numbers &nbsp;<span style="color:var(--muted);font-weight:400;font-size:.85rem">— select exactly 6 from 01–55</span></div>
+      <div class="num-grid num-grid-55" id="grid-655"></div>
+      <div class="sel-counter">Selected: <b id="cnt-655">0</b>/6</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+  </div>
+</div><!-- /main -->
+
+<!-- ═══ ADD RESULT MODAL ═══ -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <div class="modal-title">Add Lottery Result</div>
+
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="m-date" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="form-input" id="m-type">
+        <option value="645">6/45 — Mon / Wed / Fri</option>
+        <option value="655">6/55 — Tue / Thu / Sat</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Winning Numbers <span style="color:var(--muted)">(6 numbers, space or comma separated)</span></label>
+      <input type="text" class="form-input" id="m-numbers" placeholder="e.g.  03  12  25  31  40  44" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Bonus Number <span style="color:var(--muted)">(optional)</span></label>
+      <input type="text" class="form-input" id="m-bonus" placeholder="e.g. 22" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Prize Won (₫) — enter 0 if none</label>
+      <input type="number" class="form-input" id="m-prize" value="0" min="0" />
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitResult()">Add Result</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+const STORE_KEY = 'lototrack_v1';
+
+let S = {
+  settings: { url645: '', url655: '', startDate: '', nums645: [], nums655: [] },
+  results: []   // { id, date, type:'645'|'655', numbers:int[], bonus:int|null, prize:int }
+};
+
+function load() {
+  try { const d = localStorage.getItem(STORE_KEY); if (d) S = JSON.parse(d); } catch {}
+}
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+/* ══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+const RENDERERS = {
+  dashboard: renderDashboard,
+  history: renderHistory,
+  settings: renderSettings
+};
+
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    document.getElementById('page-' + page).classList.add('active');
+    RENDERERS[page]?.();
+  });
+});
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function fmt(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B ₫';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M ₫';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K ₫';
+  return n.toLocaleString() + ' ₫';
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// Count Mon/Wed/Fri (645) or Tue/Thu/Sat (655) from startDate to today
+function countDrawDays(type) {
+  if (!S.settings.startDate) return 0;
+  const drawSet = type === '645' ? new Set([1,3,5]) : new Set([2,4,6]);
+  let count = 0;
+  const cur = new Date(S.settings.startDate + 'T00:00:00');
+  const today = new Date(); today.setHours(23,59,59,999);
+  while (cur <= today) {
+    if (drawSet.has(cur.getDay())) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function matchInfo(winNums, userNums, bonusNum) {
+  const winSet = new Set(winNums.map(Number));
+  const matched = userNums.map(Number).filter(n => winSet.has(n)).length;
+  const bonusMatch = bonusNum != null && userNums.map(Number).includes(Number(bonusNum));
+  return { matched, bonusMatch };
+}
+
+function prizeTier(matched, bonusMatch) {
+  if (matched === 6)               return { label: '🏆 Jackpot 1', cls: 'pb-jackpot' };
+  if (matched === 5 && bonusMatch) return { label: '🥇 Jackpot 2', cls: 'pb-jp2' };
+  if (matched === 5)               return { label: '🥈 Prize 3',   cls: 'pb-p3' };
+  if (matched === 4)               return { label: '🥉 Prize 4',   cls: 'pb-p4' };
+  if (matched === 3)               return { label: '✨ Prize 5',   cls: 'pb-p5' };
+  return { label: 'No prize', cls: 'pb-none' };
+}
+
+function makeBall(num, cls, size = 36) {
+  return `<span class="ball ${cls}" style="width:${size}px;height:${size}px;font-size:${size*.22}px">${pad(num)}</span>`;
+}
+
+function ballRow(winNums, userNums, bonusNum, ballCls, size = 36) {
+  const userSet = new Set(userNums.map(Number));
+  const balls = winNums.map(n => makeBall(n, userSet.has(Number(n)) ? 'ball-match' : ballCls, size)).join('');
+  const bonus = bonusNum != null ? `<span class="balls-sep">+</span>${makeBall(bonusNum, 'ball-bonus', size)}` : '';
+  return `<div class="balls-row">${balls}${bonus}</div>`;
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════ */
+function renderDashboard() {
+  renderLatest('645');
+  renderLatest('655');
+
+  const draws645 = countDrawDays('645');
+  const draws655 = countDrawDays('655');
+  const spent = (draws645 + draws655) * 10000;
+  const prize = S.results.reduce((s, r) => s + (r.prize || 0), 0);
+  const net   = prize - spent;
+
+  document.getElementById('stat-spent').textContent  = S.settings.startDate ? fmt(spent) : '—';
+  document.getElementById('stat-prize').textContent  = fmt(prize);
+  const netEl = document.getElementById('stat-net');
+  netEl.textContent  = S.settings.startDate ? (net >= 0 ? '+' : '') + fmt(Math.abs(net)) : '—';
+  netEl.style.color  = net >= 0 ? 'var(--success)' : 'var(--danger)';
+
+  renderBreakdown('645', draws645);
+  renderBreakdown('655', draws655);
+}
+
+function renderLatest(type) {
+  const el = document.getElementById('dash-latest-' + type);
+  const r = [...S.results].filter(x => x.type === type).sort((a,b) => b.date.localeCompare(a.date))[0];
+  if (!r) { el.innerHTML = `<div style="color:var(--muted);text-align:center;padding:24px">No results added yet</div>`; return; }
+
+  const userNums = type === '645' ? S.settings.nums645 : S.settings.nums655;
+  const { matched, bonusMatch } = matchInfo(r.numbers, userNums, r.bonus);
+  const tier = prizeTier(matched, bonusMatch);
+  const ballCls = type === '645' ? 'ball-purple' : 'ball-red';
+
+  const myBalls = userNums.length
+    ? userNums.map(n => makeBall(n, 'ball-user', 28)).join('')
+    : '<span style="color:var(--muted)">Not set</span>';
+
+  el.innerHTML = `
+    <div style="color:var(--muted);font-size:.82rem;margin-bottom:10px">${r.date}</div>
+    ${ballRow(r.numbers, userNums, r.bonus, ballCls, 36)}
+    <div style="margin:12px 0;display:flex;align-items:center;gap:10px">
+      <span class="prize-badge ${tier.cls}">${tier.label}</span>
+      <span style="color:var(--muted);font-size:.82rem">${matched} of 6 matched</span>
+    </div>
+    ${r.prize > 0 ? `<div style="color:var(--success);font-weight:700;margin-bottom:8px">Won: ${fmt(r.prize)}</div>` : ''}
+    <div class="divider-label">My numbers</div>
+    <div class="balls-row">${myBalls}</div>
+  `;
+}
+
+function renderBreakdown(type, draws) {
+  const el = document.getElementById('dash-stats-' + type);
+  const results = S.results.filter(r => r.type === type);
+  const totalPrize = results.reduce((s, r) => s + (r.prize || 0), 0);
+  const userNums = type === '645' ? S.settings.nums645 : S.settings.nums655;
+
+  const tiers = {};
+  results.forEach(r => {
+    const { matched, bonusMatch } = matchInfo(r.numbers, userNums, r.bonus);
+    const t = prizeTier(matched, bonusMatch).label;
+    tiers[t] = (tiers[t] || 0) + 1;
+  });
+
+  const tierHTML = Object.entries(tiers)
+    .filter(([k]) => k !== 'No prize')
+    .map(([k, v]) => `<span style="font-size:.8rem;color:var(--text-soft)">${k}: <b style="color:var(--text)">${v}×</b></span>`)
+    .join('  ');
+
+  el.innerHTML = `
+    <div class="inline-stat" style="margin-bottom:14px">
+      <div><div class="istat-label">Draw Days</div><div class="istat-val">${draws}</div></div>
+      <div><div class="istat-label">Spent</div><div class="istat-val">${S.settings.startDate ? fmt(draws * 10000) : '—'}</div></div>
+      <div><div class="istat-label">Results Entered</div><div class="istat-val">${results.length}</div></div>
+      <div><div class="istat-label">Prize Won</div><div class="istat-val" style="color:var(--success)">${fmt(totalPrize)}</div></div>
+    </div>
+    <div style="font-size:.82rem;color:var(--muted)">Prizes: ${tierHTML || 'None yet'}</div>
+  `;
+}
+
+/* ══════════════════════════════════════════
+   HISTORY
+══════════════════════════════════════════ */
+let activeFilter = 'all';
+
+document.querySelectorAll('.flt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.flt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderHistory();
+  });
+});
+
+function renderHistory() {
+  let rows = [...S.results];
+  if (activeFilter !== 'all') rows = rows.filter(r => r.type === activeFilter);
+  rows.sort((a, b) => b.date.localeCompare(a.date));
+
+  const tbody = document.getElementById('hist-tbody');
+  const empty = document.getElementById('hist-empty');
+
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = rows.map(r => {
+    const userNums = r.type === '645' ? S.settings.nums645 : S.settings.nums655;
+    const { matched, bonusMatch } = matchInfo(r.numbers, userNums, r.bonus);
+    const tier = prizeTier(matched, bonusMatch);
+    const ballCls = r.type === '645' ? 'ball-purple' : 'ball-red';
+
+    const winBalls = ballRow(r.numbers, userNums, r.bonus, ballCls, 28);
+    const myBalls = userNums.length
+      ? `<div class="balls-row">${userNums.map(n => makeBall(n, 'ball-user', 24)).join('')}</div>`
+      : '<span style="color:var(--muted)">—</span>';
+
+    const prizeCell = r.prize > 0
+      ? `<span style="color:var(--success);font-weight:700">${fmt(r.prize)}</span>`
+      : `<span style="color:var(--muted)">—</span>`;
+
+    return `<tr>
+      <td style="white-space:nowrap">${r.date}</td>
+      <td><span class="type-badge tb-${r.type}">${r.type === '645' ? '6/45' : '6/55'}</span></td>
+      <td>${winBalls}</td>
+      <td>${myBalls}</td>
+      <td><span class="prize-badge ${tier.cls}">${matched} matched</span></td>
+      <td>${prizeCell}</td>
+      <td><button class="btn btn-danger" onclick="deleteResult('${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteResult(id) {
+  if (!confirm('Delete this result?')) return;
+  S.results = S.results.filter(r => r.id !== id);
+  save();
+  renderHistory();
+  toast('Result deleted');
+}
+
+/* ══════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════ */
+function renderSettings() {
+  document.getElementById('set-url645').value   = S.settings.url645    || '';
+  document.getElementById('set-url655').value   = S.settings.url655    || '';
+  document.getElementById('set-startdate').value = S.settings.startDate || '';
+  updateURLLinks();
+  buildGrid('645');
+  buildGrid('655');
+}
+
+function updateURLLinks() {
+  const u645 = document.getElementById('set-url645').value;
+  const u655 = document.getElementById('set-url655').value;
+  const el645 = document.getElementById('open-url645');
+  const el655 = document.getElementById('open-url655');
+  el645.href = u645 || '#'; el645.style.opacity = u645 ? 1 : .45;
+  el655.href = u655 || '#'; el655.style.opacity = u655 ? 1 : .45;
+}
+
+['set-url645','set-url655'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', updateURLLinks);
+});
+
+function buildGrid(type) {
+  const max = type === '645' ? 45 : 55;
+  const sel = new Set((S.settings['nums' + type] || []).map(Number));
+  const grid = document.getElementById('grid-' + type);
+  grid.innerHTML = '';
+  for (let i = 1; i <= max; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn' + (sel.has(i) ? ' selected' : '');
+    btn.textContent = pad(i);
+    btn.dataset.n = i;
+    btn.addEventListener('click', () => toggleNum(type, i, btn));
+    grid.appendChild(btn);
+  }
+  updateCnt(type);
+}
+
+function toggleNum(type, n, btn) {
+  const key = 'nums' + type;
+  let nums = [...(S.settings[key] || [])].map(Number);
+  if (nums.includes(n)) {
+    S.settings[key] = nums.filter(x => x !== n);
+    btn.classList.remove('selected');
+  } else {
+    if (nums.length >= 6) { toast('Max 6 numbers!', true); return; }
+    S.settings[key] = [...nums, n];
+    btn.classList.add('selected');
+  }
+  updateCnt(type);
+}
+
+function updateCnt(type) {
+  document.getElementById('cnt-' + type).textContent = (S.settings['nums' + type] || []).length;
+}
+
+function saveSettings() {
+  S.settings.url645     = document.getElementById('set-url645').value.trim();
+  S.settings.url655     = document.getElementById('set-url655').value.trim();
+  S.settings.startDate  = document.getElementById('set-startdate').value;
+  updateURLLinks();
+  save();
+  toast('Settings saved!');
+}
+
+/* ══════════════════════════════════════════
+   ADD RESULT MODAL
+══════════════════════════════════════════ */
+function openAddModal() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('m-date').value   = today;
+  document.getElementById('m-numbers').value = '';
+  document.getElementById('m-bonus').value   = '';
+  document.getElementById('m-prize').value   = '0';
+  // Auto-select type by weekday
+  const day = new Date().getDay();
+  document.getElementById('m-type').value = [1,3,5].includes(day) ? '645' : '655';
+  document.getElementById('modal-add').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('modal-add').classList.remove('open');
+}
+
+document.getElementById('modal-add').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-add')) closeAddModal();
+});
+
+function submitResult() {
+  const date    = document.getElementById('m-date').value;
+  const type    = document.getElementById('m-type').value;
+  const rawNums = document.getElementById('m-numbers').value;
+  const rawBonus = document.getElementById('m-bonus').value.trim();
+  const prize   = Math.max(0, parseInt(document.getElementById('m-prize').value) || 0);
+
+  if (!date) { toast('Please select a date', true); return; }
+
+  const numbers = rawNums.split(/[\s,]+/).filter(Boolean).map(Number);
+  if (numbers.length !== 6) { toast('Enter exactly 6 winning numbers', true); return; }
+
+  const max = type === '645' ? 45 : 55;
+  if (numbers.some(n => isNaN(n) || n < 1 || n > max)) {
+    toast(`Numbers must be 01–${max}`, true); return;
+  }
+
+  const bonus = rawBonus ? Number(rawBonus) : null;
+  if (bonus !== null && (isNaN(bonus) || bonus < 1 || bonus > max)) {
+    toast(`Bonus must be 01–${max}`, true); return;
+  }
+
+  S.results.push({ id: Date.now().toString(), date, type, numbers, bonus, prize });
+  save();
+  closeAddModal();
+  renderHistory();
+  toast('Result added!');
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+function toast(msg, isErr = false) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = (isErr ? '⚠️ ' : '✅ ') + msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+load();
+renderDashboard();
+</script>
+</body>
+</html>
