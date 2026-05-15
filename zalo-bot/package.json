@@ -1,0 +1,12 @@
+{
+  "name": "vietlott-zalo-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.js",
+    "send":  "node bot.js"
+  },
+  "dependencies": {
+    "zca-js": "latest"
+  }
+}
