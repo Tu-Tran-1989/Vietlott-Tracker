@@ -97,8 +97,8 @@
 
     /* ── NUMBER GRID ── */
     .num-grid { display: grid; }
-    .num-grid-45 { grid-template-columns: repeat(9, 46px);  gap: 5px; }
-    .num-grid-55 { grid-template-columns: repeat(11, 40px); gap: 5px; }
+    .num-grid-45 { grid-template-columns: repeat(9, 32px);  gap: 4px; }
+    .num-grid-55 { grid-template-columns: repeat(11, 28px); gap: 4px; }
     @media (max-width: 520px) {
       .num-grid-45 { grid-template-columns: repeat(9, 28px); }
       .num-grid-55 { grid-template-columns: repeat(9, 26px); }
@@ -106,7 +106,7 @@
     .num-btn {
       width: 100%; aspect-ratio: 1; border: 1.5px solid var(--border); border-radius: 50%;
       background: transparent; color: var(--muted); cursor: pointer;
-      font-size: 1.24rem; font-weight: 700; transition: all .13s;
+      font-size: 0.62rem; font-weight: 700; transition: all .13s;
       display: flex; align-items: center; justify-content: center;
     }
     .num-btn:hover { border-color: var(--gold); color: var(--text); }
