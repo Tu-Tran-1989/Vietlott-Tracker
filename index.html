@@ -199,6 +199,20 @@
     a.btn { text-decoration: none; }
     .url-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
     .section-gap { margin-bottom: 28px; }
+
+    /* ── SYNC BAR ── */
+    .sync-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;
+    }
+    .sync-status { font-size: 0.82rem; color: var(--muted); flex: 1; }
+    .sync-status b { color: var(--text); }
+    .btn-sync { background: linear-gradient(135deg,#7c6fea,#a29bfe); color: #fff; position: relative; min-width: 140px; justify-content: center; }
+    .btn-sync:hover { filter: brightness(1.1); }
+    .btn-sync:disabled { opacity: .6; cursor: not-allowed; filter: none; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -218,6 +232,12 @@
   <!-- ═══ DASHBOARD ═══ -->
   <div id="page-dashboard" class="page active">
     <div class="page-title">Dashboard</div>
+
+    <!-- Sync bar -->
+    <div class="sync-bar">
+      <div class="sync-status" id="sync-status">Click Sync to fetch latest results from Vietlott data.</div>
+      <button class="btn btn-sync" id="sync-btn" onclick="syncAll()">⟳ Sync Results</button>
+    </div>
 
     <!-- Latest results -->
     <div class="grid-2 section-gap">
@@ -267,7 +287,10 @@
   <div id="page-history" class="page">
     <div class="row-between">
       <div class="page-title" style="margin:0">History</div>
-      <button class="btn btn-primary" onclick="openAddModal()">+ Add Result</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-sync btn-sm" onclick="syncAll()">⟳ Sync</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Result</button>
+      </div>
     </div>
 
     <div class="filter-row">
@@ -746,6 +769,111 @@ function submitResult() {
 }
 
 /* ══════════════════════════════════════════
+   SYNC FROM VIETLOTT-DATA
+══════════════════════════════════════════ */
+const DATA_URLS = {
+  '645': 'https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power645.jsonl',
+  '655': 'https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl'
+};
+
+async function syncAll() {
+  const btn = document.getElementById('sync-btn');
+  const statusEl = document.getElementById('sync-status');
+
+  // Disable all sync buttons
+  document.querySelectorAll('.btn-sync').forEach(b => {
+    b.disabled = true;
+    b.innerHTML = '<span class="spinner"></span> Syncing…';
+  });
+
+  if (statusEl) statusEl.innerHTML = 'Fetching latest results…';
+
+  try {
+    const [cnt645, cnt655] = await Promise.all([
+      fetchAndImport('645'),
+      fetchAndImport('655')
+    ]);
+
+    const total = cnt645 + cnt655;
+    const now = new Date().toLocaleString('vi-VN');
+    S.settings.lastSync = now;
+    save();
+
+    if (statusEl) {
+      statusEl.innerHTML = total > 0
+        ? `<b>${cnt645}</b> new 6/45 &nbsp;·&nbsp; <b>${cnt655}</b> new 6/55 imported &nbsp;·&nbsp; Last sync: <b>${now}</b>`
+        : `Already up to date &nbsp;·&nbsp; Last sync: <b>${now}</b>`;
+    }
+
+    if (total > 0) {
+      toast(`Imported ${total} new result${total > 1 ? 's' : ''}!`);
+      renderDashboard();
+      renderHistory();
+    } else {
+      toast('Already up to date');
+    }
+  } catch (err) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--danger)">Sync failed: ${err.message}</span>`;
+    toast('Sync failed — check your connection', true);
+  } finally {
+    document.querySelectorAll('.btn-sync').forEach(b => {
+      b.disabled = false;
+      b.innerHTML = '⟳ Sync Results';
+    });
+    // History page button label is shorter
+    document.querySelectorAll('#page-history .btn-sync').forEach(b => b.innerHTML = '⟳ Sync');
+  }
+}
+
+async function fetchAndImport(type) {
+  const resp = await fetch(DATA_URLS[type]);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${type}`);
+  const text = await resp.text();
+
+  // Build set of already-stored dates for this type
+  const existing = new Set(S.results.filter(r => r.type === type).map(r => r.date));
+  const startDate = S.settings.startDate || null;
+
+  let imported = 0;
+
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    let record;
+    try { record = JSON.parse(trimmed); } catch { continue; }
+
+    const { date, result } = record;
+    if (!date || !Array.isArray(result)) continue;
+    if (startDate && date < startDate) continue;   // before tracking start
+    if (existing.has(date)) continue;              // already imported
+
+    let numbers, bonus;
+    if (type === '655') {
+      numbers = result.slice(0, 6).map(Number);
+      bonus   = result[6] != null ? Number(result[6]) : null;
+    } else {
+      numbers = result.slice(0, 6).map(Number);
+      bonus   = null;
+    }
+
+    S.results.push({
+      id: `sync_${type}_${date}`,
+      date,
+      type,
+      numbers,
+      bonus,
+      prize: 0   // user updates if they actually won
+    });
+    existing.add(date);
+    imported++;
+  }
+
+  if (imported > 0) save();
+  return imported;
+}
+
+/* ══════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════ */
 function toast(msg, isErr = false) {
@@ -762,6 +890,12 @@ function toast(msg, isErr = false) {
 ══════════════════════════════════════════ */
 load();
 renderDashboard();
+
+// Restore last sync time in status bar
+if (S.settings.lastSync) {
+  const el = document.getElementById('sync-status');
+  if (el) el.innerHTML = `Last sync: <b>${S.settings.lastSync}</b> &nbsp;·&nbsp; Click Sync to fetch newer results.`;
+}
 </script>
 </body>
 </html>
