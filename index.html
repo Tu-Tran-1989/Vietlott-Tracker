@@ -6,17 +6,17 @@
   <title>Lottery Tracker</title>
   <style>
     :root {
-      --bg:        #2c1a0a;   /* warm dark brown — like roasted coffee            */
-      --card:      #3a2210;   /* richer warm card                                 */
-      --border:    #5a3018;   /* visible warm brown border                        */
-      --primary:   #c04030;   /* muted brick red — terracotta, not neon           */
+      --bg:        #fce8e4;   /* soft light rose-red background                   */
+      --card:      #fff8f6;   /* near-white warm card                             */
+      --border:    #e8c0b0;   /* soft rose border                                 */
+      --primary:   #c04030;   /* muted brick red                                  */
       --primary-h: #a63525;   /* darker brick red hover                           */
-      --gold:      #c8923a;   /* warm amber gold — secondary accent               */
-      --success:   #b89838;   /* amber-gold for wins & positive states            */
-      --danger:    #cc4438;   /* slightly brighter red for errors                 */
-      --muted:     #7a6048;   /* warm muted brown-gray                            */
-      --text:      #f2dfc8;   /* parchment cream                                  */
-      --text-soft: #c09870;   /* soft warm bronze                                 */
+      --gold:      #a87020;   /* deep amber — readable on light bg                */
+      --success:   #4a7820;   /* deep green for wins on light bg                  */
+      --danger:    #cc4438;   /* error red                                        */
+      --muted:     #9a7060;   /* warm muted brown                                 */
+      --text:      #2a1510;   /* dark warm brown — main text                      */
+      --text-soft: #7a4838;   /* medium warm brown                                */
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -34,7 +34,7 @@
       cursor: pointer; font-size: 0.9rem; border-radius: 8px; transition: all .18s; font-weight: 500;
     }
     .nav-tab:hover { background: var(--border); color: var(--text); }
-    .nav-tab.active { background: var(--primary); color: var(--text); }
+    .nav-tab.active { background: var(--primary); color: #fff8f6; }
 
     /* ── LAYOUT ── */
     .main { padding: 28px 24px; max-width: 1120px; margin: 0 auto; }
@@ -85,10 +85,10 @@
       padding: 10px 20px; border: none; border-radius: 9px;
       cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all .18s;
     }
-    .btn-primary { background: var(--primary); color: var(--text); }
+    .btn-primary { background: var(--primary); color: #fff8f6; }
     .btn-primary:hover { background: var(--primary-h); }
-    .btn-ghost { background: var(--border); color: var(--text); }
-    .btn-ghost:hover { background: #4a2c18; }
+    .btn-ghost { background: #f0d8d0; color: var(--text); }
+    .btn-ghost:hover { background: #e8c8bc; }
     .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 5px 11px; font-size: 0.8rem; border-radius: 7px; }
     .btn-danger:hover { background: rgba(204,68,56,.12); }
     .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
@@ -110,7 +110,7 @@
       display: flex; align-items: center; justify-content: center;
     }
     .num-btn:hover { border-color: var(--gold); color: var(--text); }
-    .num-btn.selected { background: var(--primary); border-color: var(--primary); color: var(--text); }
+    .num-btn.selected { background: var(--primary); border-color: var(--primary); color: #fff8f6; }
     .sel-counter { font-size: 0.83rem; color: var(--muted); margin-top: 10px; }
     .sel-counter b { color: var(--gold); }
 
@@ -150,14 +150,14 @@
       background: transparent; color: var(--muted); cursor: pointer; font-size: 0.84rem; transition: all .15s;
     }
     .flt-btn:hover { border-color: var(--gold); color: var(--text); }
-    .flt-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text); }
+    .flt-btn.active { background: var(--primary); border-color: var(--primary); color: #fff8f6; }
 
     /* ── TABLE ── */
     .tbl-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th { padding: 11px 14px; text-align: left; color: var(--muted); font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    td { padding: 11px 14px; border-bottom: 1px solid rgba(90,48,24,.7); font-size: 0.87rem; vertical-align: middle; }
-    tr:hover td { background: rgba(192,64,48,.1); }
+    td { padding: 11px 14px; border-bottom: 1px solid rgba(232,192,176,.8); font-size: 0.87rem; vertical-align: middle; }
+    tr:hover td { background: rgba(192,64,48,.07); }
     .empty-state { text-align: center; padding: 52px 20px; color: var(--muted); }
     .empty-state .e-icon { font-size: 2.8rem; margin-bottom: 12px; }
     .empty-state p { font-size: 0.9rem; }
@@ -206,14 +206,14 @@
       border-radius: 14px; padding: 20px 18px; text-align: center;
       border: 1px solid var(--border);
     }
-    .fund-stat.total  { background: linear-gradient(135deg,rgba(200,148,60,.16),rgba(200,148,60,.06)); border-color: rgba(200,148,60,.3); }
-    .fund-stat.spent  { background: linear-gradient(135deg,rgba(192,64,48,.15),rgba(192,64,48,.06));  border-color: rgba(192,64,48,.3); }
-    .fund-stat.remain { background: linear-gradient(135deg,rgba(184,152,56,.15),rgba(184,152,56,.06)); border-color: rgba(184,152,56,.3); }
+    .fund-stat.total  { background: linear-gradient(135deg,rgba(168,112,32,.12),rgba(168,112,32,.04)); border-color: rgba(168,112,32,.35); }
+    .fund-stat.spent  { background: linear-gradient(135deg,rgba(192,64,48,.12),rgba(192,64,48,.04));  border-color: rgba(192,64,48,.35); }
+    .fund-stat.remain { background: linear-gradient(135deg,rgba(74,120,32,.12),rgba(74,120,32,.04));  border-color: rgba(74,120,32,.35); }
     .fund-stat .fs-label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
     .fund-stat .fs-val   { font-size: 1.85rem; font-weight: 800; margin: 8px 0 3px; }
     .fund-stat .fs-sub   { font-size: .76rem; color: var(--muted); }
-    .fund-stat.total  .fs-val { color: #d4a040; }
-    .fund-stat.spent  .fs-val { color: #d46858; }
+    .fund-stat.total  .fs-val { color: var(--gold); }
+    .fund-stat.spent  .fs-val { color: var(--primary); }
     .fund-stat.remain .fs-val { color: var(--success); }
 
     .add-panel {
@@ -224,7 +224,7 @@
       display: flex; justify-content: space-between; align-items: center;
       padding: 14px 20px; cursor: pointer; user-select: none;
     }
-    .add-panel-header:hover { background: rgba(192,64,48,.07); }
+    .add-panel-header:hover { background: rgba(192,64,48,.06); }
     .add-panel-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 8px; }
     .chevron { transition: transform .2s; font-size: .75rem; color: var(--muted); }
     .chevron.open { transform: rotate(180deg); }
@@ -233,11 +233,11 @@
 
     .tag-pill {
       display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(200,148,60,.18); color: #d4a040;
+      background: rgba(168,112,32,.15); color: var(--gold);
       padding: 3px 10px; border-radius: 20px; font-size: .78rem; font-weight: 600;
     }
-    .tag-pill.green  { background: rgba(184,152,56,.18); color: var(--success); }
-    .tag-pill.orange { background: rgba(192,64,48,.18);  color: #d46858; }
+    .tag-pill.green  { background: rgba(74,120,32,.15);  color: var(--success); }
+    .tag-pill.orange { background: rgba(192,64,48,.15);  color: var(--primary); }
 
     /* ── SYNC BAR ── */
     .sync-bar {
@@ -247,7 +247,7 @@
     }
     .sync-status { font-size: 0.82rem; color: var(--muted); flex: 1; }
     .sync-status b { color: var(--text); }
-    .btn-sync { background: linear-gradient(135deg,var(--primary),#d4583e); color: var(--text); position: relative; min-width: 140px; justify-content: center; }
+    .btn-sync { background: linear-gradient(135deg,var(--primary),#d4583e); color: #fff8f6; position: relative; min-width: 140px; justify-content: center; }
     .btn-sync:hover { filter: brightness(1.1); }
     .btn-sync:disabled { opacity: .6; cursor: not-allowed; filter: none; }
     .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(242,223,200,.3); border-top-color: var(--text); border-radius: 50%; animation: spin .7s linear infinite; }
@@ -899,11 +899,27 @@ function submitResult() {
     toast(`Bonus must be 01–${max}`, true); return;
   }
 
-  S.results.push({ id: Date.now().toString(), date, type, numbers, bonus, prize });
+  const resultId = Date.now().toString();
+  S.results.push({ id: resultId, date, type, numbers, bonus, prize });
+
+  // Auto-credit prize to fund & log in finance history
+  if (prize > 0) {
+    const userNums = type === '645' ? S.settings.nums645 : S.settings.nums655;
+    const { matched, bonusMatch } = matchInfo(numbers, userNums, bonus);
+    const tier = prizeTier(matched, bonusMatch);
+    S.funds.push({
+      id: 'prize_' + resultId,
+      date,
+      amount: prize,
+      person: '🏆 Prize Win',
+      note: `${type === '645' ? '6/45' : '6/55'} — ${tier.label} (${matched}/6 matched)`
+    });
+  }
+
   save();
   closeAddModal();
   renderHistory();
-  toast('Result added!');
+  toast(prize > 0 ? `Result added! 🎉 ${fmt(prize)} credited to fund.` : 'Result added!');
 }
 
 /* ══════════════════════════════════════════
