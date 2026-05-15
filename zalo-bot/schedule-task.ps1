@@ -15,8 +15,8 @@ $BotScript  = Join-Path $ScriptPath "bot.js"
 # 6/55  → Tue (3), Thu (5), Sat (7)  at 20:00
 
 $triggers = @(
-  New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Wednesday,Friday    -At "20:00"
-  New-ScheduledTaskTrigger -Weekly -DaysOfWeek Tuesday,Thursday,Saturday  -At "20:00"
+  New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Wednesday,Friday    -At "18:35"
+  New-ScheduledTaskTrigger -Weekly -DaysOfWeek Tuesday,Thursday,Saturday  -At "18:35"
 )
 
 $action   = New-ScheduledTaskAction -Execute $NodePath -Argument "`"$BotScript`"" -WorkingDirectory $ScriptPath
@@ -37,8 +37,8 @@ Write-Host ""
 Write-Host "✅  Task '$TaskName' registered successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Schedule:"
-Write-Host "  6/45 (Mon/Wed/Fri) → 20:00"
-Write-Host "  6/55 (Tue/Thu/Sat) → 20:00"
+Write-Host "  6/45 (Mon/Wed/Fri) → 18:35"
+Write-Host "  6/55 (Tue/Thu/Sat) → 18:35"
 Write-Host ""
 Write-Host "To test right now:"
 Write-Host "  Start-ScheduledTask -TaskName '$TaskName'"
