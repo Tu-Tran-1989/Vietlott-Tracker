@@ -140,8 +140,11 @@
 
     /* ── TYPE BADGE ── */
     .type-badge { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 20px; font-size: 0.86rem; font-weight: 700; }
-    .tb-645 { background: rgba(192,64,48,.22);  color: #d46858; }
-    .tb-655 { background: rgba(200,148,60,.22); color: #d4a040; }
+    .tb-645     { background: rgba(192,64,48,.22);  color: #d46858; }
+    .tb-655     { background: rgba(200,148,60,.22); color: #d4a040; }
+    .tb-addfund { background: rgba(74,120,32,.18);  color: #4a7820; }
+    .tb-ticket  { background: rgba(192,64,48,.18);  color: #c04030; }
+    .tb-prize   { background: rgba(200,148,60,.22); color: #a87020; }
 
     /* ── FILTER ── */
     .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -527,7 +530,8 @@
           <thead>
             <tr>
               <th>Date</th>
-              <th>Person</th>
+              <th>Type</th>
+              <th class="hide-mobile">Person / Detail</th>
               <th>Amount</th>
               <th class="hide-mobile">Note</th>
               <th></th>
@@ -571,29 +575,10 @@
       </div>
     </div>
 
-    <!-- Extra Spend History -->
-    <div class="card" style="padding:0;overflow:hidden">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--border)">
-        <div class="card-title" style="margin:0">📤 Unscheduled Spend History</div>
-      </div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Numbers</th>
-              <th>Expense</th>
-              <th>Reason</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="extra-tbody"></tbody>
-        </table>
-      </div>
-      <div id="extra-empty" class="empty-state" style="display:none">
-        <div class="e-icon">🎯</div>
-        <p>No unscheduled spends yet.</p>
-      </div>
+    <!-- Extra Spend History (hidden — merged into Fund History above) -->
+    <div style="display:none">
+      <tbody id="extra-tbody"></tbody>
+      <div id="extra-empty"></div>
     </div>
   </div>
 
@@ -1073,19 +1058,56 @@ function renderFundSummary() {
 }
 
 function renderFundHistory() {
-  const funds = [...(S.funds || [])].sort((a,b) => b.date.localeCompare(a.date));
   const tbody = document.getElementById('fund-tbody');
   const empty = document.getElementById('fund-empty');
 
-  if (!funds.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  // Normalise all transaction types into one list
+  const rows = [];
+
+  for (const f of (S.funds || [])) {
+    const isPrize = f.person === '🏆 Prize Win';
+    rows.push({
+      id:     f.id,
+      date:   f.date,
+      kind:   isPrize ? 'prize' : 'addfund',
+      badge:  isPrize ? '🏆 Prize Won' : '💰 Adding Fund',
+      cls:    isPrize ? 'tb-prize'   : 'tb-addfund',
+      detail: isPrize ? (f.note || '—') : (f.person || '—'),
+      amount: f.amount,
+      amtCls: isPrize ? 'var(--gold)' : 'var(--success)',
+      note:   isPrize ? '—' : (f.note || '—'),
+      del:    `deleteFund('${f.id}')`,
+    });
+  }
+
+  for (const e of (S.extras || [])) {
+    const nums = (e.numbers || []).map(n => makeBall(n, 'ball-purple', 28)).join('');
+    rows.push({
+      id:     e.id,
+      date:   e.date,
+      kind:   'ticket',
+      badge:  '🎟️ Buying Ticket',
+      cls:    'tb-ticket',
+      detail: nums ? `<div class="balls-row" style="flex-wrap:wrap">${nums}</div>` : '—',
+      amount: -e.expense,
+      amtCls: 'var(--danger)',
+      note:   e.reason || '—',
+      del:    `deleteExtra('${e.id}')`,
+    });
+  }
+
+  rows.sort((a, b) => b.date.localeCompare(a.date));
+
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  tbody.innerHTML = funds.map(f => `<tr>
-    <td style="white-space:nowrap">${f.date}</td>
-    <td><span class="tag-pill">${f.person || '—'}</span></td>
-    <td style="color:#a29bfe;font-weight:700">${fmt(f.amount)}</td>
-    <td class="hide-mobile" style="color:var(--muted)">${f.note || '—'}</td>
-    <td><button class="btn btn-danger" onclick="deleteFund('${f.id}')">✕</button></td>
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td style="white-space:nowrap">${r.date}</td>
+    <td><span class="type-badge ${r.cls}">${r.badge}</span></td>
+    <td class="hide-mobile">${r.detail}</td>
+    <td style="color:${r.amtCls};font-weight:700;white-space:nowrap">${r.amount < 0 ? '−' : '+'}${fmt(Math.abs(r.amount))}</td>
+    <td class="hide-mobile" style="color:var(--muted)">${r.note}</td>
+    <td><button class="btn btn-danger" onclick="${r.del}">✕</button></td>
   </tr>`).join('');
 }
 
