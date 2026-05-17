@@ -681,8 +681,16 @@ function load() {
   // Ensure new arrays exist for users with older saved data
   S.funds  = S.funds  || [];
   S.extras = S.extras || [];
+  pruneOldResults();
 }
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+function pruneOldResults() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffStr = cutoff.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  S.results = S.results.filter(r => r.date >= cutoffStr);
+}
 
 /* ══════════════════════════════════════════
    NAVIGATION
@@ -1261,7 +1269,7 @@ async function fetchAndImport(type) {
     imported++;
   }
 
-  if (imported > 0) save();
+  if (imported > 0) { pruneOldResults(); save(); }
   return imported;
 }
 
