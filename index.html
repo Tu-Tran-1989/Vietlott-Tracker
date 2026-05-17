@@ -799,8 +799,9 @@ function renderLatest(type) {
   const tier = prizeTier(matched, bonusMatch);
   const ballCls = type === '645' ? 'ball-purple' : 'ball-red';
 
+  const winSet = new Set(r.numbers.map(Number));
   const myBalls = userNums.length
-    ? userNums.map(n => makeBall(n, 'ball-user', 40)).join('')
+    ? userNums.map(n => makeBall(n, winSet.has(Number(n)) ? 'ball-match' : 'ball-user', 40)).join('')
     : '<span style="color:var(--muted)">Not set</span>';
 
   el.innerHTML = `
@@ -881,8 +882,9 @@ function renderHistory() {
     const ballCls = r.type === '645' ? 'ball-purple' : 'ball-red';
 
     const winBalls = ballRow(r.numbers, userNums, r.bonus, ballCls, 40);
+    const winSet = new Set(r.numbers.map(Number));
     const myBalls = userNums.length
-      ? `<div class="balls-row">${userNums.map(n => makeBall(n, 'ball-user', 36)).join('')}</div>`
+      ? `<div class="balls-row">${userNums.map(n => makeBall(n, winSet.has(Number(n)) ? 'ball-match' : 'ball-user', 36)).join('')}</div>`
       : '<span style="color:var(--muted)">—</span>';
 
     const prizeCell = r.prize > 0
