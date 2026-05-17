@@ -242,6 +242,14 @@
     .tag-pill.green  { background: rgba(74,120,32,.15);  color: var(--success); }
     .tag-pill.orange { background: rgba(192,64,48,.15);  color: var(--primary); }
 
+    /* ── HOT NUMBERS ── */
+    .hot-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .hot-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .hot-rank { font-size: .65rem; font-weight: 700; color: var(--primary); }
+    .hot-count { font-size: .68rem; color: var(--muted); font-weight: 600; }
+    .ball-hot-645 { background: linear-gradient(135deg,#b83c2c,#d45840); color: #f2dfc8; }
+    .ball-hot-655 { background: linear-gradient(135deg,#c07828,#d4a038); color: #f2dfc8; }
+
     /* ── SYNC BAR ── */
     .sync-bar {
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -418,6 +426,18 @@
       <div class="card">
         <div class="card-title">🔴 6/55 Breakdown</div>
         <div id="dash-stats-655"></div>
+      </div>
+    </div>
+
+    <!-- Hot Numbers -->
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <div class="card-title">🔥 6/45 Hot Numbers <span style="font-size:.75rem;font-weight:400;color:var(--muted)">(last 90 days)</span></div>
+        <div id="dash-hot-645"><span style="color:var(--muted)">No data yet</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔥 6/55 Hot Numbers <span style="font-size:.75rem;font-weight:400;color:var(--muted)">(last 90 days)</span></div>
+        <div id="dash-hot-655"><span style="color:var(--muted)">No data yet</span></div>
       </div>
     </div>
   </div>
@@ -772,6 +792,8 @@ function renderDashboard() {
 
   renderBreakdown('645', draws645);
   renderBreakdown('655', draws655);
+  renderHotNumbers('645');
+  renderHotNumbers('655');
 }
 
 function renderLatest(type) {
@@ -789,6 +811,10 @@ function renderLatest(type) {
     ? userNums.map(n => makeBall(n, winSet.has(Number(n)) ? 'ball-match' : 'ball-user', 40)).join('')
     : '<span style="color:var(--muted)">Not set</span>';
 
+  const jackpotLine = r.jackpot
+    ? `<div style="font-size:.82rem;color:var(--gold);font-weight:700;margin-bottom:4px">🎰 Jackpot: ${fmt(r.jackpot)}</div>`
+    : '';
+
   el.innerHTML = `
     <div style="color:var(--muted);font-size:.82rem;margin-bottom:10px">${r.date}</div>
     ${ballRow(r.numbers, userNums, r.bonus, ballCls, 48)}
@@ -796,10 +822,42 @@ function renderLatest(type) {
       <span class="prize-badge ${tier.cls}">${tier.label}</span>
       <span style="color:var(--muted);font-size:.82rem">${matched} of 6 matched</span>
     </div>
+    ${jackpotLine}
     ${r.prize > 0 ? `<div style="color:var(--success);font-weight:700;margin-bottom:8px">Won: ${fmt(r.prize)}</div>` : ''}
     <div class="divider-label">My numbers</div>
     <div class="balls-row">${myBalls}</div>
   `;
+}
+
+function computeHotNumbers(type, topN = 10) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const freq = {};
+  for (const r of S.results) {
+    if (r.type !== type || r.date < cutoffStr) continue;
+    for (const n of r.numbers) freq[n] = (freq[n] || 0) + 1;
+  }
+  return Object.entries(freq)
+    .map(([num, count]) => ({ num: Number(num), count }))
+    .sort((a, b) => b.count - a.count || a.num - b.num)
+    .slice(0, topN);
+}
+
+function renderHotNumbers(type) {
+  const el = document.getElementById('dash-hot-' + type);
+  const hot = computeHotNumbers(type);
+  if (!hot.length) { el.innerHTML = '<span style="color:var(--muted)">No data yet — sync results first.</span>'; return; }
+
+  const ballCls = type === '645' ? 'ball-hot-645' : 'ball-hot-655';
+  el.innerHTML = `<div class="hot-grid">${hot.map((h, i) => `
+    <div class="hot-item">
+      <span class="hot-rank">#${i + 1}</span>
+      ${makeBall(h.num, ballCls, 40)}
+      <span class="hot-count">${h.count}×</span>
+    </div>`).join('')}
+  </div>`;
 }
 
 function renderBreakdown(type, draws) {
@@ -1287,6 +1345,7 @@ async function fetchAndImport(type) {
       type,
       numbers,
       bonus,
+      jackpot: record.jackpot1 ?? record.jackpot ?? null,  // capture jackpot if present in data
       prize: 0   // user updates if they actually won
     });
     existing.add(date);
