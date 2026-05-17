@@ -243,10 +243,12 @@
     .tag-pill.orange { background: rgba(192,64,48,.15);  color: var(--primary); }
 
     /* ── HOT NUMBERS ── */
-    .hot-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
-    .hot-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .hot-rank { font-size: .65rem; font-weight: 700; color: var(--primary); }
-    .hot-count { font-size: .68rem; color: var(--muted); font-weight: 600; }
+    .hot-grid { display: flex; flex-direction: column; gap: 6px; }
+    .hot-item { display: flex; align-items: center; gap: 10px; }
+    .hot-rank { font-size: .72rem; font-weight: 700; color: var(--muted); width: 22px; text-align: right; flex-shrink: 0; }
+    .hot-count { font-size: .78rem; color: var(--text-soft); font-weight: 600; }
+    .hot-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+    .hot-bar { height: 100%; border-radius: 4px; background: var(--primary); }
     .ball-hot-645 { background: linear-gradient(135deg,#b83c2c,#d45840); color: #f2dfc8; }
     .ball-hot-655 { background: linear-gradient(135deg,#c07828,#d4a038); color: #f2dfc8; }
 
@@ -851,10 +853,14 @@ function renderHotNumbers(type) {
   if (!hot.length) { el.innerHTML = '<span style="color:var(--muted)">No data yet — sync results first.</span>'; return; }
 
   const ballCls = type === '645' ? 'ball-hot-645' : 'ball-hot-655';
+  const maxCount = hot[0].count || 1;
   el.innerHTML = `<div class="hot-grid">${hot.map((h, i) => `
     <div class="hot-item">
       <span class="hot-rank">#${i + 1}</span>
-      ${makeBall(h.num, ballCls, 40)}
+      ${makeBall(h.num, ballCls, 34)}
+      <div class="hot-bar-wrap">
+        <div class="hot-bar" style="width:${Math.round(h.count / maxCount * 100)}%"></div>
+      </div>
       <span class="hot-count">${h.count}×</span>
     </div>`).join('')}
   </div>`;
