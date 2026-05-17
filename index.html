@@ -485,18 +485,29 @@
       </div>
     </div>
 
-    <!-- Add Fund panel -->
+    <!-- Add Transaction panel (merged) -->
     <div class="add-panel" id="panel-fund">
       <div class="add-panel-header" onclick="togglePanel('panel-fund')">
-        <div class="add-panel-title">➕ Add Fund</div>
+        <div class="add-panel-title">➕ Add Transaction</div>
         <span class="chevron" id="chev-fund">▼</span>
       </div>
       <div class="add-panel-body" id="body-fund">
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Amount (₫)</label>
+            <label class="form-label">Type</label>
+            <select class="form-input" id="tx-type" onchange="onTxTypeChange()">
+              <option value="addfund">💰 Adding Fund</option>
+              <option value="ticket">🎟️ Buying Ticket</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="tx-amount-label">Amount (₫)</label>
             <input type="number" class="form-input" id="f-amount" placeholder="e.g. 200000" min="0" />
           </div>
+        </div>
+
+        <!-- Adding Fund fields -->
+        <div id="tx-fund-fields">
           <div class="form-group">
             <label class="form-label">Person</label>
             <select class="form-input" id="f-person">
@@ -508,15 +519,26 @@
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input type="date" class="form-input" id="f-date" style="max-width:240px" />
+
+        <!-- Buying Ticket fields -->
+        <div id="tx-ticket-fields" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Set of Numbers <span style="color:var(--muted)">(6 numbers, space or comma separated)</span></label>
+            <input type="text" class="form-input" id="e-numbers" placeholder="e.g. 05 18 27 33 41 50" />
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Note <span style="color:var(--muted)">(optional)</span></label>
-          <input type="text" class="form-input" id="f-note" placeholder="e.g. Monthly contribution" />
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="f-date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" id="tx-note-label">Note <span style="color:var(--muted)">(optional)</span></label>
+            <input type="text" class="form-input" id="f-note" placeholder="e.g. Monthly contribution" />
+          </div>
         </div>
-        <button class="btn btn-primary" onclick="addFund()">Add Fund</button>
+        <button class="btn btn-primary" onclick="submitTransaction()">Add</button>
       </div>
     </div>
 
@@ -546,34 +568,6 @@
       </div>
     </div>
 
-    <!-- Add Extra Spend panel -->
-    <div class="add-panel" id="panel-extra">
-      <div class="add-panel-header" onclick="togglePanel('panel-extra')">
-        <div class="add-panel-title">🎟️ Add Unscheduled Spend</div>
-        <span class="chevron" id="chev-extra">▼</span>
-      </div>
-      <div class="add-panel-body" id="body-extra">
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Date</label>
-            <input type="date" class="form-input" id="e-date" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Expense (₫)</label>
-            <input type="number" class="form-input" id="e-expense" placeholder="e.g. 50000" min="0" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Set of Numbers <span style="color:var(--muted)">(6 numbers, space or comma separated)</span></label>
-          <input type="text" class="form-input" id="e-numbers" placeholder="e.g. 05 18 27 33 41 50" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Reason</label>
-          <input type="text" class="form-input" id="e-reason" placeholder="e.g. Special draw, birthday ticket…" />
-        </div>
-        <button class="btn btn-primary" onclick="addExtraSpend()">Add Spend</button>
-      </div>
-    </div>
 
     <!-- Extra Spend History (hidden — merged into Fund History above) -->
     <div style="display:none">
@@ -1131,24 +1125,49 @@ function renderExtraHistory() {
   }).join('');
 }
 
-function addFund() {
+function onTxTypeChange() {
+  const type = document.getElementById('tx-type').value;
+  const isFund   = type === 'addfund';
+  document.getElementById('tx-fund-fields').style.display   = isFund ? '' : 'none';
+  document.getElementById('tx-ticket-fields').style.display = isFund ? 'none' : '';
+  document.getElementById('tx-amount-label').textContent    = isFund ? 'Amount (₫)' : 'Expense (₫)';
+  document.getElementById('tx-note-label').innerHTML        = isFund
+    ? 'Note <span style="color:var(--muted)">(optional)</span>'
+    : 'Reason';
+  document.getElementById('f-note').placeholder = isFund ? 'e.g. Monthly contribution' : 'e.g. Special draw, birthday ticket…';
+}
+
+function submitTransaction() {
+  const type   = document.getElementById('tx-type').value;
   const amount = parseInt(document.getElementById('f-amount').value) || 0;
-  const person = document.getElementById('f-person').value.trim();
   const date   = document.getElementById('f-date').value;
   const note   = document.getElementById('f-note').value.trim();
 
   if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
-  if (!person)                { toast('Select a person',      true); return; }
   if (!date)                  { toast('Select a date',        true); return; }
 
-  S.funds.push({ id: Date.now().toString(), date, amount, person, note });
+  if (type === 'addfund') {
+    const person = document.getElementById('f-person').value;
+    if (!person) { toast('Select a person', true); return; }
+    S.funds.push({ id: Date.now().toString(), date, amount, person, note });
+    toast('Fund added!');
+  } else {
+    const rawNums = document.getElementById('e-numbers').value;
+    const numbers = rawNums.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (numbers.length !== 6)                              { toast('Enter exactly 6 numbers', true); return; }
+    if (numbers.some(n => isNaN(n) || n < 1 || n > 55))   { toast('Numbers must be 01–55',   true); return; }
+    if (!note)                                             { toast('Enter a reason',           true); return; }
+    S.extras.push({ id: Date.now().toString(), date, numbers, expense: amount, reason: note });
+    toast('Spend recorded!');
+  }
+
   save();
-  document.getElementById('f-amount').value = '';
-  document.getElementById('f-person').value = '';
-  document.getElementById('f-note').value   = '';
+  document.getElementById('f-amount').value  = '';
+  document.getElementById('f-person').value  = '';
+  document.getElementById('f-note').value    = '';
+  document.getElementById('e-numbers').value = '';
   renderFundSummary();
   renderFundHistory();
-  toast('Fund added!');
 }
 
 function deleteFund(id) {
@@ -1158,36 +1177,11 @@ function deleteFund(id) {
   toast('Fund entry deleted');
 }
 
-function addExtraSpend() {
-  const date    = document.getElementById('e-date').value;
-  const expense = parseInt(document.getElementById('e-expense').value) || 0;
-  const rawNums = document.getElementById('e-numbers').value;
-  const reason  = document.getElementById('e-reason').value.trim();
-
-  if (!date)                  { toast('Select a date',            true); return; }
-  if (!expense || expense <=0){ toast('Enter a valid expense',    true); return; }
-  if (!reason)                { toast('Enter a reason',           true); return; }
-
-  const numbers = rawNums.split(/[\s,]+/).filter(Boolean).map(Number);
-  if (numbers.length !== 6)   { toast('Enter exactly 6 numbers', true); return; }
-  if (numbers.some(n => isNaN(n) || n < 1 || n > 55)) {
-    toast('Numbers must be 01–55', true); return;
-  }
-
-  S.extras.push({ id: Date.now().toString(), date, numbers, expense, reason });
-  save();
-  document.getElementById('e-numbers').value = '';
-  document.getElementById('e-expense').value = '';
-  document.getElementById('e-reason').value  = '';
-  renderFundSummary();
-  renderExtraHistory();
-  toast('Spend recorded!');
-}
 
 function deleteExtra(id) {
   if (!confirm('Delete this spend entry?')) return;
   S.extras = S.extras.filter(e => e.id !== id);
-  save(); renderFundSummary(); renderExtraHistory();
+  save(); renderFundSummary(); renderFundHistory();
   toast('Spend entry deleted');
 }
 
