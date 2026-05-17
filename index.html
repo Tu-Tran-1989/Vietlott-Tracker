@@ -496,7 +496,13 @@
           </div>
           <div class="form-group">
             <label class="form-label">Person</label>
-            <input type="text" class="form-input" id="f-person" placeholder="e.g. Nguyen Van A" />
+            <select class="form-input" id="f-person">
+              <option value="">— Select person —</option>
+              <option value="Lord Duc Anh">Lord Duc Anh</option>
+              <option value="Duke Anh Tu">Duke Anh Tu</option>
+              <option value="Princess Thu Thuy">Princess Thu Thuy</option>
+              <option value="Queen Thu Ha">Queen Thu Ha</option>
+            </select>
           </div>
         </div>
         <div class="form-group">
@@ -1110,7 +1116,7 @@ function addFund() {
   const note   = document.getElementById('f-note').value.trim();
 
   if (!amount || amount <= 0) { toast('Enter a valid amount', true); return; }
-  if (!person)                { toast('Enter a person name',  true); return; }
+  if (!person)                { toast('Select a person',      true); return; }
   if (!date)                  { toast('Select a date',        true); return; }
 
   S.funds.push({ id: Date.now().toString(), date, amount, person, note });
