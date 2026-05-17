@@ -852,8 +852,13 @@ function renderHotNumbers(type) {
   const hot = computeHotNumbers(type);
   if (!hot.length) { el.innerHTML = '<span style="color:var(--muted)">No data yet — sync results first.</span>'; return; }
 
-  const ballCls = type === '645' ? 'ball-hot-645' : 'ball-hot-655';
+  const ballCls  = type === '645' ? 'ball-hot-645' : 'ball-hot-655';
   const maxCount = hot[0].count || 1;
+  const totalDraws = new Set(
+    S.results.filter(r => r.type === type && r.date >= (() => { const d = new Date(); d.setDate(d.getDate()-90); return d.toISOString().slice(0,10); })())
+    .map(r => r.date)
+  ).size || 1;
+
   el.innerHTML = `<div class="hot-grid">${hot.map((h, i) => `
     <div class="hot-item">
       <span class="hot-rank">#${i + 1}</span>
@@ -861,7 +866,7 @@ function renderHotNumbers(type) {
       <div class="hot-bar-wrap">
         <div class="hot-bar" style="width:${Math.round(h.count / maxCount * 100)}%"></div>
       </div>
-      <span class="hot-count">${h.count}×</span>
+      <span class="hot-count">${h.count}× <span style="color:var(--muted);font-weight:400">(${Math.round(h.count / totalDraws * 100)}%)</span></span>
     </div>`).join('')}
   </div>`;
 }
