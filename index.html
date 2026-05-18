@@ -883,10 +883,6 @@ function renderHotNumbers(type) {
 
   const ballCls  = type === '645' ? 'ball-hot-645' : 'ball-hot-655';
   const maxCount = hot[0].count || 1;
-  const totalDraws = new Set(
-    S.results.filter(r => r.type === type && r.date >= (() => { const d = new Date(); d.setDate(d.getDate()-90); return d.toISOString().slice(0,10); })())
-    .map(r => r.date)
-  ).size || 1;
 
   el.innerHTML = `<div class="hot-grid">${hot.map((h, i) => `
     <div class="hot-item">
@@ -895,7 +891,7 @@ function renderHotNumbers(type) {
       <div class="hot-bar-wrap">
         <div class="hot-bar" style="width:${Math.round(h.count / maxCount * 100)}%"></div>
       </div>
-      <span class="hot-count">${h.count}× <span style="color:var(--muted);font-weight:400">(${Math.round(h.count / totalDraws * 100)}%)</span></span>
+      <span class="hot-count">${h.count}× <span style="color:var(--muted);font-weight:400">(${(h.count / 90 * 100).toFixed(1)}%)</span></span>
     </div>`).join('')}
   </div>`;
 }
