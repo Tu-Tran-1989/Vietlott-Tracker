@@ -405,7 +405,7 @@
       <div class="stat-card">
         <div class="stat-label">Total Spent</div>
         <div class="stat-value" id="stat-spent">—</div>
-        <div class="stat-sub">10,000₫ per draw</div>
+        <div class="stat-sub">Draws + extra tickets</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Total Prize Won</div>
@@ -415,7 +415,7 @@
       <div class="stat-card">
         <div class="stat-label">Net Balance</div>
         <div class="stat-value" id="stat-net">—</div>
-        <div class="stat-sub">Prize minus Spent</div>
+        <div class="stat-sub">Fund − Spent</div>
       </div>
     </div>
 
@@ -809,17 +809,13 @@ function renderDashboard() {
   renderLatest('645');
   renderLatest('655');
 
-  const draws645 = countDrawDays('645');
-  const draws655 = countDrawDays('655');
-  const spent = (draws645 + draws655) * 10000;
-  const prize = S.results.reduce((s, r) => s + (r.prize || 0), 0);
-  const net   = prize - spent;
+  const { draws645, draws655, totalSpent, prizeWon, remaining } = calcFinancials();
 
-  document.getElementById('stat-spent').textContent  = S.settings.startDate ? fmt(spent) : '—';
-  document.getElementById('stat-prize').textContent  = fmt(prize);
+  document.getElementById('stat-spent').textContent  = S.settings.startDate ? fmt(totalSpent) : '—';
+  document.getElementById('stat-prize').textContent  = fmt(prizeWon);
   const netEl = document.getElementById('stat-net');
-  netEl.textContent  = S.settings.startDate ? (net >= 0 ? '+' : '') + fmt(Math.abs(net)) : '—';
-  netEl.style.color  = net >= 0 ? 'var(--success)' : 'var(--danger)';
+  netEl.textContent  = S.settings.startDate ? (remaining >= 0 ? '+' : '') + fmt(Math.abs(remaining)) : '—';
+  netEl.style.color  = remaining >= 0 ? 'var(--success)' : 'var(--danger)';
 
   renderBreakdown('645', draws645);
   renderBreakdown('655', draws655);
@@ -1120,14 +1116,20 @@ function renderFinance() {
   document.getElementById('e-date').value = today;
 }
 
-function renderFundSummary() {
-  const totalFund  = (S.funds  || []).reduce((s, f) => s + (f.amount  || 0), 0);
-  const extraSpent = (S.extras || []).reduce((s, e) => s + (e.expense || 0), 0);
+function calcFinancials() {
   const draws645   = countDrawDays('645');
   const draws655   = countDrawDays('655');
   const drawSpent  = (draws645 + draws655) * 10000;
+  const extraSpent = (S.extras || []).reduce((s, e) => s + (e.expense || 0), 0);
   const totalSpent = drawSpent + extraSpent;
+  const totalFund  = (S.funds  || []).reduce((s, f) => s + (f.amount  || 0), 0);
+  const prizeWon   = (S.funds  || []).filter(f => f.person === '🏆 Prize Win').reduce((s, f) => s + (f.amount || 0), 0);
   const remaining  = totalFund - totalSpent;
+  return { draws645, draws655, drawSpent, extraSpent, totalSpent, totalFund, prizeWon, remaining };
+}
+
+function renderFundSummary() {
+  const { totalFund, drawSpent, extraSpent, totalSpent, remaining } = calcFinancials();
 
   const people = [...new Set((S.funds || []).map(f => f.person).filter(Boolean))];
 
