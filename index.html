@@ -627,6 +627,31 @@
     </div>
 
     <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+
+    <!-- Cloud Sync -->
+    <div class="card section-gap">
+      <div class="card-title">☁️ Cloud Sync (GitHub Gist)</div>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:16px">
+        Sync data across all your devices using a private GitHub Gist.<br>
+        <a href="https://github.com/settings/tokens/new?scopes=gist&description=VietlottTracker" target="_blank" style="color:var(--primary)">Create a token here</a> — tick the <b>gist</b> scope only.
+      </p>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Personal Access Token</label>
+          <input type="password" class="form-input" id="gist-pat" placeholder="ghp_…" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gist ID <span style="color:var(--muted);font-weight:400">(blank = auto-create)</span></label>
+          <input type="text" class="form-input" id="gist-id" placeholder="Will be filled automatically" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="connectGist()">🔗 Save &amp; Connect</button>
+        <button class="btn btn-sync" onclick="manualGistPull()">⬇ Pull</button>
+        <button class="btn btn-sync" onclick="manualGistPush()">⬆ Push</button>
+        <span id="gist-status" style="font-size:.82rem"></span>
+      </div>
+    </div>
   </div>
 </div><!-- /main -->
 
@@ -690,7 +715,10 @@ function load() {
   S.extras = S.extras || [];
   pruneOldResults();
 }
-function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(S));
+  gistPush(); // async fire-and-forget
+}
 
 function pruneOldResults() {
   const cutoff = new Date();
@@ -717,6 +745,7 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
     const page = btn.dataset.page;
     document.getElementById('page-' + page).classList.add('active');
     RENDERERS[page]?.();
+    if (page === 'settings') populateGistFields();
   });
 });
 
@@ -1380,15 +1409,147 @@ function toast(msg, isErr = false) {
 }
 
 /* ══════════════════════════════════════════
+   CLOUD SYNC — GitHub Gist
+══════════════════════════════════════════ */
+const GIST_KEY      = 'lototrack_gist';
+const GIST_FILENAME = 'vietlott-tracker-data.json';
+let gistCfg = { pat: '', gistId: '' };
+
+function loadGistCfg() {
+  try { const c = localStorage.getItem(GIST_KEY); if (c) gistCfg = JSON.parse(c); } catch {}
+}
+
+function saveGistCfg() {
+  localStorage.setItem(GIST_KEY, JSON.stringify(gistCfg));
+}
+
+function gistHeaders() {
+  return {
+    Authorization: `token ${gistCfg.pat}`,
+    Accept: 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json',
+  };
+}
+
+function setGistStatus(msg, ok = true) {
+  const el = document.getElementById('gist-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--success)' : 'var(--danger)';
+}
+
+async function gistPull() {
+  if (!gistCfg.pat || !gistCfg.gistId) return false;
+  try {
+    const resp = await fetch(`https://api.github.com/gists/${gistCfg.gistId}`, { headers: gistHeaders() });
+    if (!resp.ok) return false;
+    const data = await resp.json();
+    const content = data.files?.[GIST_FILENAME]?.content;
+    if (!content) return false;
+    const remote = JSON.parse(content);
+    S = remote;
+    S.funds  = S.funds  || [];
+    S.extras = S.extras || [];
+    pruneOldResults();
+    localStorage.setItem(STORE_KEY, JSON.stringify(S));
+    return true;
+  } catch { return false; }
+}
+
+async function gistPush() {
+  if (!gistCfg.pat || !gistCfg.gistId) return false;
+  try {
+    const resp = await fetch(`https://api.github.com/gists/${gistCfg.gistId}`, {
+      method: 'PATCH',
+      headers: gistHeaders(),
+      body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(S) } } }),
+    });
+    return resp.ok;
+  } catch { return false; }
+}
+
+async function gistCreate() {
+  try {
+    const resp = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: gistHeaders(),
+      body: JSON.stringify({
+        description: 'Vietlott Tracker Data',
+        public: false,
+        files: { [GIST_FILENAME]: { content: JSON.stringify(S) } },
+      }),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.id;
+  } catch { return null; }
+}
+
+async function connectGist() {
+  const pat    = document.getElementById('gist-pat').value.trim();
+  const gistId = document.getElementById('gist-id').value.trim();
+  if (!pat) { setGistStatus('Enter a Personal Access Token', false); return; }
+  gistCfg.pat    = pat;
+  gistCfg.gistId = gistId;
+
+  setGistStatus('Connecting…', true);
+
+  if (!gistCfg.gistId) {
+    const newId = await gistCreate();
+    if (!newId) { setGistStatus('Failed to create Gist — check your token', false); return; }
+    gistCfg.gistId = newId;
+    document.getElementById('gist-id').value = newId;
+    saveGistCfg();
+    setGistStatus(`✅ Gist created! ID: ${newId}`);
+  } else {
+    const ok = await gistPush();
+    saveGistCfg();
+    setGistStatus(ok ? '✅ Connected & synced!' : '❌ Could not reach Gist — check ID/token', ok);
+  }
+}
+
+async function manualGistPull() {
+  if (!gistCfg.pat || !gistCfg.gistId) { setGistStatus('Set up token & Gist ID first', false); return; }
+  setGistStatus('Pulling…');
+  const ok = await gistPull();
+  if (ok) { renderDashboard(); toast('Data pulled from Gist ✅'); setGistStatus('✅ Pull complete'); }
+  else    { setGistStatus('❌ Pull failed', false); toast('Pull failed', true); }
+}
+
+async function manualGistPush() {
+  if (!gistCfg.pat || !gistCfg.gistId) { setGistStatus('Set up token & Gist ID first', false); return; }
+  setGistStatus('Pushing…');
+  const ok = await gistPush();
+  setGistStatus(ok ? '✅ Push complete' : '❌ Push failed', ok);
+  if (!ok) toast('Push failed', true);
+}
+
+// Populate Settings fields when Settings tab is opened
+function populateGistFields() {
+  const patEl = document.getElementById('gist-pat');
+  const idEl  = document.getElementById('gist-id');
+  if (patEl) patEl.value = gistCfg.pat    || '';
+  if (idEl)  idEl.value  = gistCfg.gistId || '';
+}
+
+/* ══════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════ */
 load();
+loadGistCfg();
 renderDashboard();
 
 // Restore last sync time in status bar
 if (S.settings.lastSync) {
   const el = document.getElementById('sync-status');
   if (el) el.innerHTML = `Last sync: <b>${S.settings.lastSync}</b> &nbsp;·&nbsp; Click Sync to fetch newer results.`;
+}
+
+// Auto-pull from Gist on load (background)
+if (gistCfg.pat && gistCfg.gistId) {
+  gistPull().then(ok => {
+    if (ok) { renderDashboard(); toast('☁️ Data synced from Gist'); }
+  });
 }
 </script>
 </body>
