@@ -1354,6 +1354,11 @@ async function fetchAndImport(type) {
   if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${type}`);
   const text = await resp.text();
 
+  // Only keep the last 90 days — older data gets pruned anyway
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
   // Build set of already-stored dates for this type
   const existing = new Set(S.results.filter(r => r.type === type).map(r => r.date));
   const startDate = S.settings.startDate || null;
@@ -1369,6 +1374,7 @@ async function fetchAndImport(type) {
 
     const { date, result } = record;
     if (!date || !Array.isArray(result)) continue;
+    if (date < cutoffStr) continue;                // older than 90 days — skip
     if (startDate && date < startDate) continue;   // before tracking start
     if (existing.has(date)) continue;              // already imported
 
